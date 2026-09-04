@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFF6EE">
+<title>축제 부스 장부</title>
+<style>
+  :root{
+    --bg:#FFF6EE; --card:#FFFFFF; --ink:#3E3733; --dim:#9A8F88;
+    --line:#F0E4DA; --pink:#FF8FA3; --pink-d:#F76B84; --yellow:#FFCF5C;
+    --mint:#6ED2A8; --blue:#7FB8F5; --red:#F2765F;
+    --r:22px; --sh:0 4px 0 rgba(0,0,0,.05), 0 8px 24px rgba(190,150,120,.14);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink); overflow-x:hidden;
+    font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',system-ui,-apple-system,sans-serif;
+    font-size:16px; line-height:1.5;
+    padding-bottom:calc(78px + env(safe-area-inset-bottom));
+  }
+  button,input{font-family:inherit; font-size:inherit; color:inherit}
+  input{
+    background:#FFFDFB; border:2px solid var(--line); border-radius:14px;
+    padding:10px 12px; min-width:0; width:100%;
+  }
+  input:focus{outline:none; border-color:var(--pink)}
+  h3{margin:0 0 10px; font-size:17px; letter-spacing:-.02em}
+
+  /* ---------- 머리말 ---------- */
+  header{
+    position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:10px;
+    padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+    background:var(--bg); border-bottom:1px solid var(--line);
+  }
+  header .name{font-weight:800; font-size:17px; letter-spacing:-.03em}
+  header .sum{margin-left:auto; font-size:13px; color:var(--dim); font-weight:600; text-align:right}
+  header .gear{
+    background:var(--card); border:2px solid var(--line); border-radius:14px;
+    width:40px; height:40px; font-size:18px; flex:none; box-shadow:var(--sh); cursor:pointer;
+  }
+
+  main{padding:14px 14px 20px; max-width:560px; margin:0 auto}
+
+  .card{
+    background:var(--card); border-radius:var(--r); padding:16px;
+    box-shadow:var(--sh); margin-bottom:14px;
+  }
+  .muted{color:var(--dim); font-size:13.5px; margin:6px 0}
+  .warn{color:var(--red); font-size:13.5px; margin:6px 0; font-weight:600}
+  .rowBetween{display:flex; align-items:center; justify-content:space-between; gap:8px}
+
+  /* ---------- 메뉴 버튼 (판매) ---------- */
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:11px; margin-bottom:14px}
+  .menuBtn{
+    position:relative; display:flex; flex-direction:column; gap:2px; align-items:flex-start;
+    background:var(--card); border:none; border-radius:var(--r); padding:14px 14px 12px;
+    box-shadow:var(--sh); cursor:pointer; text-align:left; overflow:hidden;
+    transition:transform .08s;
+  }
+  .menuBtn:active{transform:scale(.96)}
+  .menuBtn .thumb{
+    width:100%; aspect-ratio:16/10; border-radius:14px; object-fit:cover;
+    margin-bottom:8px; background:#FDF0E6;
+  }
+  .menuBtn .mName{font-weight:800; font-size:16px; letter-spacing:-.02em}
+  .menuBtn .mPrice{font-weight:800; font-size:19px; color:var(--pink-d)}
+  .menuBtn .mLeft{font-size:12px; color:var(--dim); font-weight:600}
+  .menuBtn.low .mLeft{color:#E08A1E}
+  .menuBtn.out{opacity:.45}
+  .menuBtn.out .mLeft{color:var(--red)}
+
+  /* ---------- 장바구니 ---------- */
+  .cartRow{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px dashed var(--line)}
+  .cartRow .cName{flex:1; font-weight:700; font-size:15px}
+  .cartRow .cQty{width:30px; text-align:center; font-weight:800}
+  .cartRow .cSum{width:74px; text-align:right; font-weight:700; font-size:15px}
+  .qtyBtn{
+    width:34px; height:34px; flex:none; border:none; border-radius:12px;
+    background:#FFF0F3; color:var(--pink-d); font-size:19px; font-weight:800; cursor:pointer;
+  }
+  .qtyBtn:active{transform:scale(.92)}
+  .total{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-top:12px; padding-top:12px; border-top:2px solid var(--line);
+  }
+  .total strong{font-size:26px; font-weight:900; color:var(--pink-d); letter-spacing:-.03em}
+
+  .payRow{display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:14px}
+  .payBtn{
+    border:none; border-radius:16px; padding:15px 0; font-size:16px; font-weight:800;
+    background:var(--pink); color:#fff; cursor:pointer; box-shadow:0 3px 0 var(--pink-d);
+  }
+  .payBtn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--pink-d)}
+  .payBtn.b2{background:var(--blue); box-shadow:0 3px 0 #5C9BDE}
+  .payBtn.b2:active{box-shadow:0 1px 0 #5C9BDE}
+  .payBtn.b3{background:var(--yellow); color:#7A5A12; box-shadow:0 3px 0 #E6B23F}
+  .payBtn.b3:active{box-shadow:0 1px 0 #E6B23F}
+
+  .bigBtn{
+    display:block; width:100%; border:none; border-radius:16px; padding:15px;
+    font-size:16px; font-weight:800; background:var(--mint); color:#fff;
+    cursor:pointer; margin-top:12px; box-shadow:0 3px 0 #4FB68C;
+  }
+  .bigBtn:active{transform:translateY(2px); box-shadow:0 1px 0 #4FB68C}
+  .linkBtn{
+    display:block; width:100%; background:none; border:none; color:var(--dim);
+    font-size:13.5px; font-weight:600; padding:10px 0; cursor:pointer; text-decoration:underline;
+  }
+  .warnBtn{
+    display:block; width:100%; border:2px solid #FBD9D2; border-radius:14px; padding:11px;
+    background:#FFF5F3; color:var(--red); font-weight:700; cursor:pointer; margin-top:8px;
+  }
+  .miniBtn{
+    border:2px solid var(--line); border-radius:12px; background:#FFFDFB;
+    padding:7px 11px; font-size:13.5px; font-weight:700; cursor:pointer; margin:3px 4px 3px 0;
+  }
+  .miniBtn.warn{border-color:#FBD9D2; color:var(--red); background:#FFF7F5}
+  .miniBtn.go{border-color:var(--mint); color:#3E9E77; background:#F1FBF6}
+
+  /* ---------- 표 ---------- */
+  .tbl{width:100%; border-collapse:collapse; font-size:14px}
+  .tbl th{
+    text-align:left; font-size:12px; color:var(--dim); font-weight:700;
+    padding:5px 4px; border-bottom:2px solid var(--line);
+  }
+  .tbl td{padding:7px 4px; border-bottom:1px solid var(--line); vertical-align:middle}
+  .tbl td.r, .tbl th.r{text-align:right}
+  .tbl tr.zero td{color:var(--red)}
+  .tbl input.sm{padding:6px 8px; border-radius:10px; font-size:13.5px}
+  .r{text-align:right}
+  .big{font-weight:800; font-size:18px}
+
+  .formRow{display:flex; align-items:center; gap:10px; padding:6px 0}
+  .formRow label{flex:1; font-size:14.5px; font-weight:600}
+  .formRow input{width:118px; flex:none; text-align:right}
+  .formRow span{font-weight:700}
+
+  /* ---------- 메뉴판 ---------- */
+  .boardGrid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px}
+  .boardCard{
+    background:var(--card); border-radius:var(--r); overflow:hidden;
+    box-shadow:var(--sh); position:relative;
+  }
+  .boardCard .ph{
+    width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#FDF0E6;
+    border:none;
+  }
+  .boardCard .ph.empty{
+    display:flex; align-items:center; justify-content:center;
+    color:var(--dim); font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .boardCard .bd{padding:10px 12px 12px}
+  .boardCard .bn{font-weight:800; font-size:16px; letter-spacing:-.02em; border:none; padding:0; background:none}
+  .boardCard .bp{
+    font-weight:900; font-size:21px; color:var(--pink-d);
+    border:none; padding:2px 0; background:none; text-align:left;
+  }
+  .boardCard .bp:focus{outline:2px dashed var(--pink); border-radius:8px}
+  .soldout{
+    position:absolute; inset:0; background:rgba(255,255,255,.72);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:20px; color:var(--red); letter-spacing:.05em;
+  }
+
+  /* 손님에게 보여 주는 전체화면 메뉴판 */
+  .show{
+    position:fixed; inset:0; z-index:60; background:var(--bg); overflow:auto;
+    padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+  }
+  .show h2{text-align:center; margin:8px 0 18px; font-size:24px; font-weight:900; letter-spacing:-.03em}
+  .show .closeX{
+    position:fixed; right:14px; top:calc(12px + env(safe-area-inset-top)); z-index:61;
+    width:42px; height:42px; border-radius:50%; border:none; background:var(--card);
+    box-shadow:var(--sh); font-size:19px; cursor:pointer;
+  }
+  .show .boardCard .bp{font-size:24px}
+
+  /* ---------- 모달 ---------- */
+  .modalBack{
+    position:fixed; inset:0; z-index:70; background:rgba(62,55,51,.42);
+    display:flex; align-items:center; justify-content:center; padding:18px;
+  }
+  .modal{
+    background:var(--card); border-radius:26px; padding:20px; width:100%; max-width:360px;
+    box-shadow:0 18px 50px rgba(0,0,0,.22); max-height:88vh; overflow:auto;
+  }
+  .modal h3{font-size:19px; text-align:center; margin-bottom:14px}
+  .bigInput{font-size:24px !important; font-weight:800; text-align:center; padding:14px !important; margin-bottom:10px}
+  .change{
+    text-align:center; font-size:22px; font-weight:900; color:var(--mint);
+    padding:8px 0 12px; letter-spacing:-.02em;
+  }
+  .quickRow{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:6px}
+  .quickBtn{
+    border:2px solid var(--line); background:#FFFDFB; border-radius:12px;
+    padding:8px 12px; font-weight:700; font-size:14px; cursor:pointer;
+  }
+  .quickBtn.on{border-color:var(--pink); background:#FFF0F3; color:var(--pink-d)}
+
+  .qrWrap{display:flex; flex-direction:column; align-items:center; gap:6px; padding:8px 0}
+  .qrWrap canvas{border-radius:14px; box-shadow:var(--sh)}
+  .qrAmt{font-weight:900; font-size:22px; color:var(--pink-d)}
+  .qrText{font-size:11.5px; color:var(--dim); word-break:break-all; text-align:center}
+  .notice{
+    background:#FFF9EC; border:2px dashed var(--yellow); border-radius:16px;
+    padding:14px; text-align:center;
+  }
+  .notice p{margin:4px 0}
+
+  /* ---------- 탭 ---------- */
+  nav#tabs{
+    position:fixed; left:0; right:0; bottom:0; z-index:30;
+    display:flex; background:var(--card); border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -6px 20px rgba(190,150,120,.1);
+  }
+  nav#tabs button{
+    flex:1; background:none; border:none; padding:6px 0 4px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:1px;
+    color:var(--dim); font-weight:700; border-radius:14px;
+  }
+  nav#tabs button .ic{font-size:21px; line-height:1.15}
+  nav#tabs button .lb{font-size:11px}
+  nav#tabs button.on{color:var(--pink-d); background:#FFF3F5}
+
+  .toast{
+    position:fixed; left:50%; bottom:100px; transform:translateX(-50%); z-index:80;
+    background:var(--ink); color:#fff; padding:11px 20px; border-radius:999px;
+    font-weight:700; font-size:14px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+  .menuEdit{border:2px solid var(--line); border-radius:16px; padding:12px; margin-bottom:10px}
+  .recipeRow{display:flex; align-items:center; gap:8px; padding:3px 0}
+  .recipeRow label{flex:1; font-size:13.5px}
+  .recipeRow input{width:76px; flex:none; text-align:right}
+  .recipeRow span{font-size:12px; width:26px; color:var(--dim)}
+  .fold{cursor:pointer; user-select:none}
+</style>
+</head>
+<body>
+  <header>
+    <span class="name" id="boothName">부스</span>
+    <span class="sum" id="headSum"></span>
+    <button class="gear" id="gear" aria-label="설정">⚙️</button>
+  </header>
+  <main id="screen"></main>
+  <nav id="tabs"></nav>
+
+  <script>
+/* qr.js — 오프라인 QR 코드 생성기 (바이트 모드, 버전 1~10)
+ *
+ * 축제 부스에서 와이파이 없이 돌아가야 해서 외부 라이브러리를 쓰지 않는다.
+ * QR.encode(text, ec) → { size, get(row,col) }
+ *   ec: 'L' | 'M' | 'Q' | 'H'  (기본 'M')
+ */
+(function (global) {
+  'use strict';
+
+  /* ---------- GF(256) ---------- */
+  var EXP = new Uint8Array(512);
+  var LOG = new Uint8Array(256);
+  (function () {
+    var x = 1;
+    for (var i = 0; i < 255; i++) {
+      EXP[i] = x;
+      LOG[x] = i;
+      x <<= 1;
+      if (x & 0x100) x ^= 0x11d;
+    }
+    for (i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  })();
+
+  function gmul(a, b) {
+    return (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]];
+  }
+
+  function genPoly(n) {
+    var g = [1];
+    for (var i = 0; i < n; i++) {
+      var ng = new Array(g.length + 1);
+      for (var k = 0; k < ng.length; k++) ng[k] = 0;
+      for (var j = 0; j < g.length; j++) {
+        ng[j] ^= g[j];
+        ng[j + 1] ^= gmul(g[j], EXP[i]);
+      }
+      g = ng;
+    }
+    return g;
+  }
+
+  function rsEncode(data, ecLen) {
+    var g = genPoly(ecLen);
+    var buf = new Uint8Array(data.length + ecLen);
+    buf.set(data);
+    for (var i = 0; i < data.length; i++) {
+      var f = buf[i];
+      if (f !== 0) {
+        for (var j = 0; j < g.length; j++) buf[i + j] ^= gmul(g[j], f);
+      }
+    }
+    return buf.subarray(data.length);
+  }
+
+  /* ---------- 버전·오류정정 표 (버전 1~10) ----------
+   * [ec코드워드/블록, 그룹1 블록수, 그룹1 데이터수, 그룹2 블록수, 그룹2 데이터수]
+   */
+  var RS = {
+    L: [null,
+      [7, 1, 19, 0, 0], [10, 1, 34, 0, 0], [15, 1, 55, 0, 0], [20, 1, 80, 0, 0],
+      [26, 1, 108, 0, 0], [18, 2, 68, 0, 0], [20, 2, 78, 0, 0], [24, 2, 97, 0, 0],
+      [30, 2, 116, 0, 0], [18, 2, 68, 2, 69]],
+    M: [null,
+      [10, 1, 16, 0, 0], [16, 1, 28, 0, 0], [26, 1, 44, 0, 0], [18, 2, 32, 0, 0],
+      [24, 2, 43, 0, 0], [16, 4, 27, 0, 0], [18, 4, 31, 0, 0], [22, 2, 38, 2, 39],
+      [22, 3, 36, 2, 37], [26, 4, 43, 1, 44]],
+    Q: [null,
+      [13, 1, 13, 0, 0], [22, 1, 22, 0, 0], [18, 2, 17, 0, 0], [26, 2, 24, 0, 0],
+      [18, 2, 15, 2, 16], [24, 4, 19, 0, 0], [18, 2, 14, 4, 15], [22, 4, 18, 2, 19],
+      [20, 4, 16, 4, 17], [24, 6, 19, 2, 20]],
+    H: [null,
+      [17, 1, 9, 0, 0], [28, 1, 16, 0, 0], [22, 2, 13, 0, 0], [16, 4, 9, 0, 0],
+      [22, 2, 11, 2, 12], [28, 4, 15, 0, 0], [26, 4, 13, 1, 14], [26, 4, 14, 2, 15],
+      [24, 4, 12, 4, 13], [28, 6, 15, 2, 16]]
+  };
+
+  var ALIGN = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34],
+    [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50]];
+
+  var EC_BITS = { L: 1, M: 0, Q: 3, H: 2 };
+  var MAX_VERSION = 10;
+
+  function dataCodewords(version, ec) {
+    var r = RS[ec][version];
+    return r[1] * r[2] + r[3] * r[4];
+  }
+
+  /* ---------- 비트 버퍼 ---------- */
+  function BitBuffer() {
+    this.bytes = [];
+    this.len = 0;
+  }
+  BitBuffer.prototype.put = function (value, bits) {
+    for (var i = bits - 1; i >= 0; i--) this.putBit((value >>> i) & 1);
+  };
+  BitBuffer.prototype.putBit = function (bit) {
+    var idx = this.len >> 3;
+    if (this.bytes.length <= idx) this.bytes.push(0);
+    if (bit) this.bytes[idx] |= 0x80 >>> (this.len & 7);
+    this.len++;
+  };
+
+  /* ---------- 데이터 코드워드 만들기 ---------- */
+  function makeCodewords(bytes, version, ec) {
+    var buf = new BitBuffer();
+    buf.put(4, 4);                                  // 바이트 모드
+    buf.put(bytes.length, version < 10 ? 8 : 16);   // 글자 수
+    for (var i = 0; i < bytes.length; i++) buf.put(bytes[i], 8);
+
+    var capacity = dataCodewords(version, ec) * 8;
+    // 종단자 최대 4비트
+    for (i = 0; i < 4 && buf.len < capacity; i++) buf.putBit(0);
+    // 바이트 경계까지
+    while (buf.len % 8 !== 0) buf.putBit(0);
+    // 채움 바이트
+    var pad = [0xec, 0x11], p = 0;
+    while (buf.len < capacity) {
+      buf.put(pad[p++ % 2], 8);
+    }
+
+    var raw = buf.bytes;
+    var r = RS[ec][version];
+    var ecLen = r[0];
+    var blocks = [];
+    var offset = 0;
+    var g;
+    for (g = 0; g < r[1]; g++) {
+      blocks.push(Uint8Array.prototype.slice.call(new Uint8Array(raw), offset, offset + r[2]));
+      offset += r[2];
+    }
+    for (g = 0; g < r[3]; g++) {
+      blocks.push(Uint8Array.prototype.slice.call(new Uint8Array(raw), offset, offset + r[4]));
+      offset += r[4];
+    }
+    var eccs = blocks.map(function (b) { return rsEncode(b, ecLen); });
+
+    // 인터리브
+    var out = [];
+    var maxData = Math.max(r[2], r[4]);
+    for (i = 0; i < maxData; i++) {
+      for (var b = 0; b < blocks.length; b++) {
+        if (i < blocks[b].length) out.push(blocks[b][i]);
+      }
+    }
+    for (i = 0; i < ecLen; i++) {
+      for (b = 0; b < eccs.length; b++) out.push(eccs[b][i]);
+    }
+    return new Uint8Array(out);
+  }
+
+  /* ---------- BCH ---------- */
+  function bchDigit(v) {
+    var d = 0;
+    while (v !== 0) { d++; v >>>= 1; }
+    return d;
+  }
+  function formatInfo(ec, mask) {
+    var data = (EC_BITS[ec] << 3) | mask;
+    var d = data << 10;
+    while (bchDigit(d) - bchDigit(0x537) >= 0) d ^= 0x537 << (bchDigit(d) - bchDigit(0x537));
+    return ((data << 10) | d) ^ 0x5412;
+  }
+  function versionInfo(version) {
+    var d = version << 12;
+    while (bchDigit(d) - bchDigit(0x1f25) >= 0) d ^= 0x1f25 << (bchDigit(d) - bchDigit(0x1f25));
+    return (version << 12) | d;
+  }
+
+  /* ---------- 마스크 ---------- */
+  function maskFn(pattern, i, j) {
+    switch (pattern) {
+      case 0: return (i + j) % 2 === 0;
+      case 1: return i % 2 === 0;
+      case 2: return j % 3 === 0;
+      case 3: return (i + j) % 3 === 0;
+      case 4: return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
+      case 5: return ((i * j) % 2) + ((i * j) % 3) === 0;
+      case 6: return (((i * j) % 2) + ((i * j) % 3)) % 2 === 0;
+      case 7: return (((i * j) % 3) + ((i + j) % 2)) % 2 === 0;
+    }
+    return false;
+  }
+
+  /* ---------- 배치 ---------- */
+  function buildMatrix(version, ec, codewords, mask) {
+    var size = version * 4 + 17;
+    var m = [];
+    for (var i = 0; i < size; i++) {
+      var row = new Array(size);
+      for (var j = 0; j < size; j++) row[j] = null;
+      m.push(row);
+    }
+
+    function finder(r, c) {
+      for (var dr = -1; dr <= 7; dr++) {
+        for (var dc = -1; dc <= 7; dc++) {
+          var rr = r + dr, cc = c + dc;
+          if (rr < 0 || cc < 0 || rr >= size || cc >= size) continue;
+          var on = false;
+          if (dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6) {
+            var ring = (dr === 0 || dr === 6 || dc === 0 || dc === 6);
+            var core = (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4);
+            on = ring || core;
+          }
+          m[rr][cc] = on;
+        }
+      }
+    }
+    finder(0, 0);
+    finder(0, size - 7);
+    finder(size - 7, 0);
+
+    // 타이밍 패턴
+    for (i = 8; i < size - 8; i++) {
+      var on = (i % 2 === 0);
+      if (m[6][i] === null) m[6][i] = on;
+      if (m[i][6] === null) m[i][6] = on;
+    }
+
+    // 정렬 패턴
+    // 파인더와 겹치는 세 모서리만 빼고 모두 놓는다.
+    // (버전 7부터는 6행·6열 위에도 정렬 패턴이 온다. "이미 칠해진 칸이면 건너뛴다"로
+    //  판단하면 타이밍 패턴에 가려 통째로 빠지므로, 자리로 판단해야 한다.)
+    var cen = ALIGN[version];
+    var lastC = cen.length - 1;
+    for (var a = 0; a < cen.length; a++) {
+      for (var b = 0; b < cen.length; b++) {
+        if ((a === 0 && b === 0) || (a === 0 && b === lastC) || (a === lastC && b === 0)) continue;
+        var r = cen[a], c = cen[b];
+        for (var dr2 = -2; dr2 <= 2; dr2++) {
+          for (var dc2 = -2; dc2 <= 2; dc2++) {
+            var ad = Math.max(Math.abs(dr2), Math.abs(dc2));
+            m[r + dr2][c + dc2] = (ad !== 1);
+          }
+        }
+      }
+    }
+
+    // 버전 정보 (7 이상)
+    if (version >= 7) {
+      var vb = versionInfo(version);
+      for (i = 0; i < 18; i++) {
+        var vbit = ((vb >> i) & 1) === 1;
+        m[Math.floor(i / 3)][(i % 3) + size - 8 - 3] = vbit;
+        m[(i % 3) + size - 8 - 3][Math.floor(i / 3)] = vbit;
+      }
+    }
+
+    // 형식 정보
+    var fi = formatInfo(ec, mask);
+    for (i = 0; i < 15; i++) {
+      var fbit = ((fi >> i) & 1) === 1;
+      if (i < 6) m[i][8] = fbit;
+      else if (i < 8) m[i + 1][8] = fbit;
+      else m[size - 15 + i][8] = fbit;
+
+      if (i < 8) m[8][size - i - 1] = fbit;
+      else if (i < 9) m[8][15 - i - 1 + 1] = fbit;
+      else m[8][15 - i - 1] = fbit;
+    }
+    m[size - 8][8] = true;   // 고정 검은 모듈
+
+    // 데이터 배치 (지그재그)
+    var inc = -1, rowp = size - 1, bitIndex = 7, byteIndex = 0;
+    for (var col = size - 1; col > 0; col -= 2) {
+      if (col === 6) col--;
+      for (;;) {
+        for (var k = 0; k < 2; k++) {
+          if (m[rowp][col - k] === null) {
+            var dark = false;
+            if (byteIndex < codewords.length) {
+              dark = ((codewords[byteIndex] >>> bitIndex) & 1) === 1;
+            }
+            if (maskFn(mask, rowp, col - k)) dark = !dark;
+            m[rowp][col - k] = dark;
+            bitIndex--;
+            if (bitIndex === -1) { byteIndex++; bitIndex = 7; }
+          }
+        }
+        rowp += inc;
+        if (rowp < 0 || rowp >= size) { rowp -= inc; inc = -inc; break; }
+      }
+    }
+    return m;
+  }
+
+  /* ---------- 마스크 평가 ---------- */
+  function penalty(m) {
+    var size = m.length, score = 0, i, j, run, prev;
+
+    // 규칙 1: 같은 색 5칸 이상 연속
+    for (i = 0; i < size; i++) {
+      run = 1; prev = m[i][0];
+      for (j = 1; j < size; j++) {
+        if (m[i][j] === prev) run++;
+        else { if (run >= 5) score += run - 2; run = 1; prev = m[i][j]; }
+      }
+      if (run >= 5) score += run - 2;
+
+      run = 1; prev = m[0][i];
+      for (j = 1; j < size; j++) {
+        if (m[j][i] === prev) run++;
+        else { if (run >= 5) score += run - 2; run = 1; prev = m[j][i]; }
+      }
+      if (run >= 5) score += run - 2;
+    }
+
+    // 규칙 2: 2x2 같은 색
+    for (i = 0; i < size - 1; i++) {
+      for (j = 0; j < size - 1; j++) {
+        var v = m[i][j];
+        if (v === m[i][j + 1] && v === m[i + 1][j] && v === m[i + 1][j + 1]) score += 3;
+      }
+    }
+
+    // 규칙 3: 파인더를 흉내내는 1:1:3:1:1 패턴
+    // 심볼 바깥은 여백(흰색)이므로, 가장자리에 걸친 패턴도 잡으려면
+    // 양 끝에 흰 칸 4개를 덧대고 검사해야 한다.
+    var p1 = [true, false, true, true, true, false, true, false, false, false, false];
+    var p2 = [false, false, false, false, true, false, true, true, true, false, true];
+    function match(line) {
+      var padded = [false, false, false, false].concat(line, [false, false, false, false]);
+      var hit = 0;
+      for (var s = 0; s + 11 <= padded.length; s++) {
+        var ok1 = true, ok2 = true;
+        for (var t = 0; t < 11; t++) {
+          if (padded[s + t] !== p1[t]) ok1 = false;
+          if (padded[s + t] !== p2[t]) ok2 = false;
+        }
+        if (ok1) hit++;
+        if (ok2) hit++;
+      }
+      return hit;
+    }
+    for (i = 0; i < size; i++) {
+      var rowLine = [], colLine = [];
+      for (j = 0; j < size; j++) { rowLine.push(m[i][j] === true); colLine.push(m[j][i] === true); }
+      score += 40 * match(rowLine);
+      score += 40 * match(colLine);
+    }
+
+    // 규칙 4: 검은 칸 비율
+    var dark = 0;
+    for (i = 0; i < size; i++) for (j = 0; j < size; j++) if (m[i][j]) dark++;
+    var pct = (dark * 100) / (size * size);
+    score += Math.floor(Math.abs(pct - 50) / 5) * 10;
+
+    return score;
+  }
+
+  /* ---------- 공개 API ---------- */
+  function toBytes(text) {
+    if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(text);
+    var out = [], i, c;
+    for (i = 0; i < text.length; i++) {
+      c = text.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+      else out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return new Uint8Array(out);
+  }
+
+  function encode(text, ec, forceVersion, forceMask) {
+    ec = ec || 'M';
+    var bytes = toBytes(String(text));
+    var version = forceVersion || 0;
+    if (!version) {
+      for (var v = 1; v <= MAX_VERSION; v++) {
+        var need = 4 + (v < 10 ? 8 : 16) + bytes.length * 8;
+        if (dataCodewords(v, ec) * 8 >= need) { version = v; break; }
+      }
+      if (!version) throw new Error('QR: 내용이 너무 깁니다 (버전 ' + MAX_VERSION + ' 초과)');
+    }
+
+    var cw = makeCodewords(bytes, version, ec);
+    var best = null, bestScore = Infinity;
+    var masks = (forceMask === undefined || forceMask === null) ? [0, 1, 2, 3, 4, 5, 6, 7] : [forceMask];
+    for (var i = 0; i < masks.length; i++) {
+      var m = buildMatrix(version, ec, cw, masks[i]);
+      var s = masks.length === 1 ? 0 : penalty(m);
+      if (s < bestScore) { bestScore = s; best = m; }
+    }
+
+    return {
+      version: version,
+      size: best.length,
+      matrix: best,
+      get: function (r, c) { return best[r][c] === true; }
+    };
+  }
+
+  var QR = { encode: encode };
+  if (typeof module !== 'undefined' && module.exports) module.exports = QR;
+  else global.QR = QR;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+  <script>
+/* app.js — 축제 부스 장부
+ *
+ * 원칙 세 가지
+ *  1) 파는 사람은 메뉴를 누르고 결제 방법만 고른다. 나머지는 앱이 알아서 한다.
+ *  2) 재고는 값을 직접 고쳐 쓰지 않고 사건 목록에서 매번 계산한다.
+ *     재고 = Σ입고 − Σ판매(레시피 소모) − Σ폐기
+ *     그래야 판매 취소가 안전하고, 숫자가 어긋나도 원인을 되짚을 수 있다.
+ *  3) 사진·가격은 축제 당일 아침에 그 자리에서 바꿀 수 있어야 한다.
+ */
+(function () {
+  'use strict';
+
+  var KEY = 'festival_booth_v1';
+  var PAYS = [['현금', ''], ['이체', 'b2'], ['쿠폰', 'b3']];
+
+  /* ================= 메뉴 꾸러미 ================= */
+  // 매입가는 장을 봐야 아는 값이라 0으로 둔다. 판매가는 고치기 쉽게 어림값만 넣어 둔다.
+  var PRESETS = {
+    ours: {
+      name: '비빔면 · 대패삼겹살',
+      items: [
+        { id: 'i1', name: '비빔면', unit: '개', packQty: 5, packPrice: 0 },
+        { id: 'i2', name: '대패삼겹살', unit: 'g', packQty: 1000, packPrice: 0 },
+        { id: 'i3', name: '상추', unit: '장', packQty: 50, packPrice: 0 },
+        { id: 'i4', name: '그릇', unit: '개', packQty: 50, packPrice: 0 },
+        { id: 'i5', name: '젓가락', unit: '개', packQty: 100, packPrice: 0 }
+      ],
+      menus: [
+        { id: 'm1', name: '세트', price: 4000, photo: '', recipe: [
+          { itemId: 'i1', qty: 1 }, { itemId: 'i2', qty: 150 },
+          { itemId: 'i3', qty: 3 }, { itemId: 'i4', qty: 1 }, { itemId: 'i5', qty: 1 }] },
+        { id: 'm2', name: '비빔면', price: 2000, photo: '', recipe: [
+          { itemId: 'i1', qty: 1 }, { itemId: 'i4', qty: 1 }, { itemId: 'i5', qty: 1 }] },
+        { id: 'm3', name: '대패삼겹살', price: 3000, photo: '', recipe: [
+          { itemId: 'i2', qty: 150 }, { itemId: 'i3', qty: 3 },
+          { itemId: 'i4', qty: 1 }, { itemId: 'i5', qty: 1 }] }
+      ]
+    },
+    bingsu: {
+      name: '빙수',
+      items: [
+        { id: 'i1', name: '얼음', unit: 'g', packQty: 1000, packPrice: 0 },
+        { id: 'i2', name: '연유', unit: 'ml', packQty: 500, packPrice: 0 },
+        { id: 'i3', name: '팥', unit: 'g', packQty: 500, packPrice: 0 },
+        { id: 'i4', name: '떡', unit: '개', packQty: 30, packPrice: 0 },
+        { id: 'i5', name: '미숫가루', unit: 'g', packQty: 300, packPrice: 0 },
+        { id: 'i6', name: '빙수 그릇', unit: '개', packQty: 50, packPrice: 0 },
+        { id: 'i7', name: '숟가락', unit: '개', packQty: 100, packPrice: 0 }
+      ],
+      menus: [
+        { id: 'm1', name: '팥빙수', price: 4000, photo: '', recipe: [
+          { itemId: 'i1', qty: 250 }, { itemId: 'i2', qty: 40 }, { itemId: 'i3', qty: 60 },
+          { itemId: 'i4', qty: 3 }, { itemId: 'i6', qty: 1 }, { itemId: 'i7', qty: 1 }] },
+        { id: 'm2', name: '인절미빙수', price: 4500, photo: '', recipe: [
+          { itemId: 'i1', qty: 250 }, { itemId: 'i2', qty: 40 }, { itemId: 'i5', qty: 30 },
+          { itemId: 'i4', qty: 3 }, { itemId: 'i6', qty: 1 }, { itemId: 'i7', qty: 1 }] }
+      ]
+    },
+    takoyaki: {
+      name: '타코야끼',
+      items: [
+        { id: 'i1', name: '반죽가루', unit: 'g', packQty: 1000, packPrice: 0 },
+        { id: 'i2', name: '문어', unit: 'g', packQty: 500, packPrice: 0 },
+        { id: 'i3', name: '가쓰오부시', unit: 'g', packQty: 100, packPrice: 0 },
+        { id: 'i4', name: '소스', unit: 'ml', packQty: 500, packPrice: 0 },
+        { id: 'i5', name: '마요네즈', unit: 'ml', packQty: 500, packPrice: 0 },
+        { id: 'i6', name: '종이 용기', unit: '개', packQty: 50, packPrice: 0 },
+        { id: 'i7', name: '이쑤시개', unit: '개', packQty: 100, packPrice: 0 }
+      ],
+      menus: [
+        { id: 'm1', name: '6알', price: 3000, photo: '', recipe: [
+          { itemId: 'i1', qty: 90 }, { itemId: 'i2', qty: 30 }, { itemId: 'i3', qty: 3 },
+          { itemId: 'i4', qty: 15 }, { itemId: 'i5', qty: 10 },
+          { itemId: 'i6', qty: 1 }, { itemId: 'i7', qty: 1 }] },
+        { id: 'm2', name: '8알', price: 4000, photo: '', recipe: [
+          { itemId: 'i1', qty: 120 }, { itemId: 'i2', qty: 40 }, { itemId: 'i3', qty: 4 },
+          { itemId: 'i4', qty: 20 }, { itemId: 'i5', qty: 13 },
+          { itemId: 'i6', qty: 1 }, { itemId: 'i7', qty: 1 }] }
+      ]
+    }
+  };
+
+  /* ================= 상태 ================= */
+  var S = null;
+
+  function blank() {
+    return {
+      boothName: '', preset: '',
+      account: { bank: '', number: '', holder: '', link: '' },  // 학생들에게 받아 나중에 채운다
+      items: [], menus: [],
+      plan: {}, purchases: [], sales: [], adjusts: [], counted: {},
+      cash0: 0, ledgerMode: 'simple', soldout: {}
+    };
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        S = Object.assign(blank(), JSON.parse(raw));
+        if (!S.account) S.account = { bank: '', number: '', holder: '', link: '' };
+        if (!S.soldout) S.soldout = {};
+        return;
+      }
+    } catch (e) { /* 못 읽으면 새로 시작 */ }
+    S = blank();
+  }
+
+  var saveWarned = false;
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); }
+    catch (e) {
+      if (!saveWarned) {
+        saveWarned = true;
+        alert('저장 공간이 가득 찼습니다.\n메뉴 사진을 몇 장 지우면 됩니다.\n\n종이 기록도 꼭 함께 해 주세요.');
+      }
+    }
+  }
+
+  /* ================= 계산 ================= */
+  function uid() { return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4); }
+  function won(n) { return (Math.round(n) || 0).toLocaleString('ko-KR'); }
+  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function round1(n) { return Math.round(n * 10) / 10; }
+
+  function item(id) { for (var i = 0; i < S.items.length; i++) if (S.items[i].id === id) return S.items[i]; return null; }
+  function menu(id) { for (var i = 0; i < S.menus.length; i++) if (S.menus[i].id === id) return S.menus[i]; return null; }
+  function unitCost(it) { return (!it || !it.packQty) ? 0 : num(it.packPrice) / num(it.packQty); }
+
+  function stockIn(id) {
+    var it = item(id), s = 0;
+    if (!it) return 0;
+    for (var i = 0; i < S.purchases.length; i++) {
+      if (S.purchases[i].itemId === id) s += num(S.purchases[i].packs) * num(it.packQty);
+    }
+    return s;
+  }
+  function usedBySales(id) {
+    var s = 0;
+    for (var i = 0; i < S.sales.length; i++) {
+      for (var j = 0; j < S.sales[i].lines.length; j++) {
+        var ln = S.sales[i].lines[j], mn = menu(ln.menuId);
+        if (!mn) continue;
+        for (var k = 0; k < mn.recipe.length; k++) {
+          if (mn.recipe[k].itemId === id) s += num(mn.recipe[k].qty) * num(ln.qty);
+        }
+      }
+    }
+    return s;
+  }
+  function adjusted(id) {
+    var s = 0;
+    for (var i = 0; i < S.adjusts.length; i++) if (S.adjusts[i].itemId === id) s += num(S.adjusts[i].qty);
+    return s;
+  }
+  function stock(id) { return stockIn(id) - usedBySales(id) - adjusted(id); }
+
+  function menuCost(mn) {
+    var c = 0;
+    for (var i = 0; i < mn.recipe.length; i++) c += unitCost(item(mn.recipe[i].itemId)) * num(mn.recipe[i].qty);
+    return c;
+  }
+
+  // 지금 재고로 몇 개까지 만들 수 있나. 재료를 하나도 안 산 상태면 제한하지 않는다.
+  function makeable(mn) {
+    if (!mn.recipe.length) return Infinity;
+    if (!S.purchases.length) return Infinity;
+    var min = Infinity;
+    for (var i = 0; i < mn.recipe.length; i++) {
+      var need = num(mn.recipe[i].qty);
+      if (need <= 0) continue;
+      min = Math.min(min, Math.floor(stock(mn.recipe[i].itemId) / need));
+    }
+    return min === Infinity ? Infinity : Math.max(0, min);
+  }
+  function isSoldout(mn) { return !!S.soldout[mn.id] || makeable(mn) <= 0; }
+
+  function salesTotal(pay) {
+    var s = 0;
+    for (var i = 0; i < S.sales.length; i++) if (!pay || S.sales[i].pay === pay) s += num(S.sales[i].total);
+    return s;
+  }
+  function soldQty(menuId) {
+    var s = 0;
+    for (var i = 0; i < S.sales.length; i++) {
+      for (var j = 0; j < S.sales[i].lines.length; j++) {
+        if (S.sales[i].lines[j].menuId === menuId) s += num(S.sales[i].lines[j].qty);
+      }
+    }
+    return s;
+  }
+  function spentTotal() {
+    var s = 0;
+    for (var i = 0; i < S.purchases.length; i++) s += num(S.purchases[i].cost);
+    return s;
+  }
+  function cogs() {
+    var s = 0;
+    for (var i = 0; i < S.sales.length; i++) {
+      for (var j = 0; j < S.sales[i].lines.length; j++) {
+        var mn = menu(S.sales[i].lines[j].menuId);
+        if (mn) s += menuCost(mn) * num(S.sales[i].lines[j].qty);
+      }
+    }
+    return s;
+  }
+  function lossCost() {
+    var s = 0;
+    for (var i = 0; i < S.adjusts.length; i++) s += unitCost(item(S.adjusts[i].itemId)) * num(S.adjusts[i].qty);
+    return s;
+  }
+
+  /* ================= 화면 도우미 ================= */
+  var cart = [];
+  var view = 'sell';
+
+  function $(s) { return document.querySelector(s); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+  function go(v) { view = v; render(); }
+
+  function toast(msg) {
+    var t = el('div', 'toast', msg);
+    document.body.appendChild(t);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 1600);
+  }
+
+  function modal(build) {
+    var back = el('div', 'modalBack');
+    var box = el('div', 'modal');
+    build(box, function () { if (back.parentNode) document.body.removeChild(back); });
+    back.appendChild(box);
+    back.onclick = function (e) { if (e.target === back) document.body.removeChild(back); };
+    document.body.appendChild(back);
+  }
+
+  function render() {
+    var root = $('#screen');
+    root.innerHTML = '';
+    if (!S.menus.length && view !== 'setup') view = 'setup';
+    ({ sell: viewSell, board: viewBoard, stock: viewStock, close: viewClose, setup: viewSetup }[view] || viewSell)(root);
+
+    var tabs = document.querySelectorAll('#tabs button');
+    for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('on', tabs[i].dataset.v === view);
+    $('#boothName').textContent = S.boothName || '축제 부스';
+    $('#headSum').textContent = S.sales.length ? (won(salesTotal()) + '원 · ' + S.sales.length + '건') : '';
+  }
+
+  /* ================= 판매 ================= */
+  function cartTotal() {
+    var t = 0;
+    for (var i = 0; i < cart.length; i++) {
+      var mn = menu(cart[i].menuId);
+      if (mn) t += mn.price * cart[i].qty;
+    }
+    return t;
+  }
+  function addCart(id) {
+    for (var i = 0; i < cart.length; i++) if (cart[i].menuId === id) { cart[i].qty++; render(); return; }
+    cart.push({ menuId: id, qty: 1 });
+    render();
+  }
+
+  function viewSell(root) {
+    var grid = el('div', 'grid');
+    S.menus.forEach(function (mn) {
+      var can = makeable(mn), out = isSoldout(mn);
+      var b = el('button', 'menuBtn' + (out ? ' out' : (can <= 5 ? ' low' : '')));
+      if (mn.photo) {
+        var im = document.createElement('img');
+        im.className = 'thumb';
+        im.src = mn.photo;
+        im.alt = '';
+        b.appendChild(im);
+      }
+      b.appendChild(el('span', 'mName', mn.name));
+      b.appendChild(el('span', 'mPrice', won(mn.price) + '원'));
+      b.appendChild(el('span', 'mLeft',
+        out ? '품절' : (can === Infinity ? ' ' : '가능 ' + can + '개')));
+      b.onclick = function () {
+        if (out && !confirm(mn.name + '은(는) 품절 표시 상태입니다. 그래도 팔까요?')) return;
+        addCart(mn.id);
+      };
+      grid.appendChild(b);
+    });
+    root.appendChild(grid);
+
+    var box = el('div', 'card');
+    if (!cart.length) {
+      box.appendChild(el('p', 'muted', '메뉴를 눌러 담으세요.'));
+      var qb = el('button', 'miniBtn', '📱 금액 직접 넣어 송금 QR');
+      qb.onclick = askQR;
+      box.appendChild(qb);
+    } else {
+      cart.forEach(function (line, idx) {
+        var mn = menu(line.menuId);
+        var row = el('div', 'cartRow');
+        row.appendChild(el('span', 'cName', mn.name));
+        var minus = el('button', 'qtyBtn', '−');
+        minus.onclick = function () {
+          cart[idx].qty--;
+          if (cart[idx].qty <= 0) cart.splice(idx, 1);
+          render();
+        };
+        var plus = el('button', 'qtyBtn', '+');
+        plus.onclick = function () { cart[idx].qty++; render(); };
+        row.appendChild(minus);
+        row.appendChild(el('span', 'cQty', String(line.qty)));
+        row.appendChild(plus);
+        row.appendChild(el('span', 'cSum', won(mn.price * line.qty)));
+        box.appendChild(row);
+      });
+      var tot = el('div', 'total');
+      tot.appendChild(el('span', null, '합계'));
+      tot.appendChild(el('strong', null, won(cartTotal()) + '원'));
+      box.appendChild(tot);
+
+      var pays = el('div', 'payRow');
+      PAYS.forEach(function (p) {
+        var b = el('button', 'payBtn ' + p[1], p[0]);
+        b.onclick = function () { startPay(p[0]); };
+        pays.appendChild(b);
+      });
+      box.appendChild(pays);
+
+      var clr = el('button', 'linkBtn', '비우기');
+      clr.onclick = function () { cart = []; render(); };
+      box.appendChild(clr);
+    }
+    root.appendChild(box);
+
+    if (S.sales.length) {
+      var last = S.sales[S.sales.length - 1];
+      var c = el('div', 'card');
+      c.appendChild(el('div', 'muted', '마지막 판매 · ' + won(last.total) + '원 (' + last.pay + ')'));
+      var u = el('button', 'warnBtn', '↩ 방금 판매 취소');
+      u.onclick = function () {
+        if (confirm(won(last.total) + '원 판매를 취소합니다.\n재고도 함께 되돌아갑니다.')) {
+          S.sales.pop(); save(); render(); toast('취소했습니다');
+        }
+      };
+      c.appendChild(u);
+      root.appendChild(c);
+    }
+  }
+
+  function startPay(pay) {
+    var total = cartTotal();
+    if (total <= 0) return;
+    if (pay === '현금') return payCash(total);
+    if (pay === '이체') return payTransfer(total);
+    finishSale(pay, 0, 0);
+  }
+
+  function payCash(total) {
+    modal(function (box, close) {
+      box.appendChild(el('h3', null, '현금 ' + won(total) + '원'));
+      var got = el('input', 'bigInput');
+      got.type = 'number'; got.inputMode = 'numeric'; got.placeholder = '받은 돈';
+      box.appendChild(got);
+      var chg = el('div', 'change', '거스름돈 —');
+      box.appendChild(chg);
+      function upd() {
+        var r = num(got.value);
+        chg.textContent = (got.value === '' || r < total) ? '거스름돈 —' : '거스름돈 ' + won(r - total) + '원';
+      }
+      got.oninput = upd;
+
+      var quick = el('div', 'quickRow');
+      var seen = {};
+      [total, Math.ceil(total / 1000) * 1000, 5000, 10000, 20000, 50000].forEach(function (v) {
+        if (v < total || seen[v]) return;
+        seen[v] = 1;
+        var b = el('button', 'quickBtn', v === total ? '딱 맞게' : won(v));
+        b.onclick = function () { got.value = v; upd(); };
+        quick.appendChild(b);
+      });
+      box.appendChild(quick);
+
+      var ok = el('button', 'bigBtn', '완료');
+      ok.onclick = function () {
+        var r = num(got.value);
+        if (got.value === '' || r < total) { alert('받은 돈이 합계보다 적습니다.'); return; }
+        close();
+        finishSale('현금', r, r - total);
+      };
+      box.appendChild(ok);
+      setTimeout(function () { got.focus(); }, 60);
+    });
+  }
+
+  function payTransfer(total) {
+    modal(function (box, close) {
+      box.appendChild(el('h3', null, '이체 ' + won(total) + '원'));
+      var wrap = el('div', 'qrWrap');
+      box.appendChild(wrap);
+      drawQR(wrap, total);
+      var ok = el('button', 'bigBtn', '입금 확인함 · 완료');
+      ok.onclick = function () { close(); finishSale('이체', total, 0); };
+      box.appendChild(ok);
+      var no = el('button', 'linkBtn', '취소');
+      no.onclick = close;
+      box.appendChild(no);
+    });
+  }
+
+  function finishSale(pay, received, change) {
+    var lines = cart.map(function (l) {
+      var mn = menu(l.menuId);
+      return { menuId: l.menuId, name: mn.name, price: mn.price, qty: l.qty };
+    });
+    S.sales.push({ id: uid(), t: Date.now(), lines: lines, total: cartTotal(), pay: pay, received: received, change: change });
+    cart = [];
+    save();
+    render();
+    toast(change > 0 ? '거스름돈 ' + won(change) + '원' : pay + ' 완료');
+  }
+
+  /* ================= 송금 QR ================= */
+  // amount 가 null 이면 금액 없는 계좌 안내만 만든다 (메뉴판에 걸어 두는 용도)
+  function payString(amount) {
+    var a = S.account;
+    var noAmount = (amount === null || amount === undefined);
+    if (a.link) {
+      if (a.link.indexOf('{금액}') >= 0) return a.link.replace(/\{금액\}/g, noAmount ? '' : String(amount));
+      return noAmount ? a.link : a.link.replace(/\/+$/, '') + '/' + amount;
+    }
+    if (a.bank || a.number) {
+      var base = (a.bank + ' ' + a.number + ' ' + a.holder).trim();
+      return noAmount ? base : base + ' ' + won(amount) + '원';
+    }
+    return '';
+  }
+
+  function drawQR(wrap, amount, label) {
+    wrap.innerHTML = '';
+    var text = payString(amount);
+    if (!text) {
+      var n = el('div', 'notice');
+      n.appendChild(el('p', null, '계좌가 아직 비어 있어요'));
+      n.appendChild(el('p', 'muted', '⚙️ 설정에서 계좌나 송금 링크를 넣으면 여기에 QR이 생깁니다.'));
+      wrap.appendChild(n);
+      return;
+    }
+    var q;
+    try { q = QR.encode(text, 'M'); }
+    catch (e) { wrap.appendChild(el('p', 'muted', '내용이 너무 길어 QR로 만들 수 없습니다.')); return; }
+
+    // 여백 5칸. 규격 최소는 4칸이지만 넉넉해야 잘 읽힌다.
+    var quiet = 5, n2 = q.size + quiet * 2;
+    var scale = Math.max(3, Math.floor(Math.min(290, window.innerWidth - 96) / n2));
+    var cv = el('canvas');
+    cv.width = cv.height = n2 * scale;
+    cv.style.width = cv.style.height = (n2 * scale) + 'px';
+    var g = cv.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height);
+    g.fillStyle = '#000';
+    for (var r = 0; r < q.size; r++) {
+      for (var c = 0; c < q.size; c++) {
+        if (q.get(r, c)) g.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+      }
+    }
+    wrap.appendChild(cv);
+    wrap.appendChild(el('div', 'qrAmt', label !== undefined ? label : won(amount) + '원'));
+    wrap.appendChild(el('div', 'qrText', text));
+  }
+
+  function askQR() {
+    modal(function (box) {
+      box.appendChild(el('h3', null, '송금 QR'));
+      var inp = el('input', 'bigInput');
+      inp.type = 'number'; inp.inputMode = 'numeric'; inp.placeholder = '금액';
+      box.appendChild(inp);
+      var wrap = el('div', 'qrWrap');
+      box.appendChild(wrap);
+      inp.oninput = function () {
+        var v = num(inp.value);
+        if (v > 0) drawQR(wrap, v); else wrap.innerHTML = '';
+      };
+      setTimeout(function () { inp.focus(); }, 60);
+    });
+  }
+
+  /* ================= 메뉴판 ================= */
+  function shrinkPhoto(file, cb) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var max = 640;
+        var w = img.width, h = img.height;
+        if (w > h && w > max) { h = Math.round(h * max / w); w = max; }
+        else if (h >= w && h > max) { w = Math.round(w * max / h); h = max; }
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        cb(cv.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = function () { alert('사진을 읽지 못했습니다.'); };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(file);
+  }
+
+  function pickPhoto(mn, after) {
+    var f = document.createElement('input');
+    f.type = 'file';
+    f.accept = 'image/*';
+    f.onchange = function () {
+      if (!f.files || !f.files[0]) return;
+      shrinkPhoto(f.files[0], function (data) {
+        mn.photo = data;
+        save();
+        after ? after() : render();
+        toast('사진을 넣었습니다');
+      });
+    };
+    f.click();
+  }
+
+  function boardCard(mn, editable) {
+    var card = el('div', 'boardCard');
+    if (mn.photo) {
+      var im = document.createElement('img');
+      im.className = 'ph';
+      im.src = mn.photo;
+      im.alt = mn.name;
+      if (editable) { im.style.cursor = 'pointer'; im.onclick = function () { pickPhoto(mn); }; }
+      card.appendChild(im);
+    } else if (editable) {
+      var ph = el('div', 'ph empty', '📷 사진 넣기');
+      ph.onclick = function () { pickPhoto(mn); };
+      card.appendChild(ph);
+    }
+    // 손님용 화면에서는 사진이 없으면 빈 칸을 만들지 않는다
+
+    var bd = el('div', 'bd');
+    if (editable) {
+      var nm = el('input', 'bn');
+      nm.value = mn.name;
+      nm.onchange = function () { mn.name = nm.value || '메뉴'; save(); render(); };
+      bd.appendChild(nm);
+      var pz = el('input', 'bp');
+      pz.type = 'text';
+      pz.inputMode = 'numeric';
+      pz.value = won(mn.price) + '원';
+      pz.onfocus = function () { pz.value = mn.price || ''; pz.select(); };
+      pz.onblur = function () {
+        mn.price = num(pz.value);
+        pz.value = won(mn.price) + '원';
+        save(); render();
+      };
+      bd.appendChild(pz);
+    } else {
+      bd.appendChild(el('div', 'bn', mn.name));
+      bd.appendChild(el('div', 'bp', won(mn.price) + '원'));
+    }
+    card.appendChild(bd);
+
+    if (isSoldout(mn)) card.appendChild(el('div', 'soldout', '품 절'));
+    return card;
+  }
+
+  function viewBoard(root) {
+    var c = el('div', 'card');
+    var head = el('div', 'rowBetween');
+    head.appendChild(el('h3', null, '메뉴판'));
+    var showBtn = el('button', 'miniBtn go', '🖥 손님에게 보여주기');
+    showBtn.onclick = showBoard;
+    head.appendChild(showBtn);
+    c.appendChild(head);
+    c.appendChild(el('p', 'muted', '사진을 누르면 바꿀 수 있고, 가격을 누르면 그 자리에서 고칠 수 있습니다. 오늘 아침에 정해도 됩니다.'));
+    root.appendChild(c);
+
+    var grid = el('div', 'boardGrid');
+    S.menus.forEach(function (mn) { grid.appendChild(boardCard(mn, true)); });
+    root.appendChild(grid);
+
+    var c2 = el('div', 'card');
+    c2.appendChild(el('h3', null, '품절 표시'));
+    c2.appendChild(el('p', 'muted', '재료가 남아 있어도 손으로 품절을 걸 수 있습니다. 재료가 떨어지면 저절로 품절이 됩니다.'));
+    S.menus.forEach(function (mn) {
+      var r = el('div', 'formRow');
+      r.appendChild(el('label', null, mn.name));
+      var b = el('button', 'miniBtn' + (S.soldout[mn.id] ? ' warn' : ''), S.soldout[mn.id] ? '품절 해제' : '품절로');
+      b.onclick = function () { S.soldout[mn.id] = !S.soldout[mn.id]; save(); render(); };
+      r.appendChild(b);
+      c2.appendChild(r);
+    });
+    var add = el('button', 'miniBtn', '+ 메뉴 추가');
+    add.onclick = function () {
+      S.menus.push({ id: uid(), name: '새 메뉴', price: 0, photo: '', recipe: [] });
+      save(); render();
+    };
+    c2.appendChild(add);
+    root.appendChild(c2);
+  }
+
+  function showBoard() {
+    var ov = el('div', 'show');
+    var x = el('button', 'closeX', '✕');
+    x.onclick = function () { document.body.removeChild(ov); };
+    ov.appendChild(x);
+    ov.appendChild(el('h2', null, S.boothName || '메뉴'));
+    var grid = el('div', 'boardGrid');
+    S.menus.forEach(function (mn) { grid.appendChild(boardCard(mn, false)); });
+    ov.appendChild(grid);
+    if (payString(1)) {
+      var qc = el('div', 'card');
+      qc.appendChild(el('h3', null, '계좌이체도 됩니다'));
+      var w = el('div', 'qrWrap');
+      qc.appendChild(w);
+      drawQR(w, null, '');   // 메뉴판에는 금액 없이 계좌만
+      ov.appendChild(qc);
+    }
+    document.body.appendChild(ov);
+  }
+
+  /* ================= 재고 (장보기 포함) ================= */
+  function viewStock(root) {
+    // 장보기 계산기
+    var c0 = el('div', 'card');
+    var h0 = el('div', 'rowBetween fold');
+    h0.appendChild(el('h3', null, '🛒 장보기 계산기'));
+    var arrow = el('span', 'muted', S.shopOpen ? '접기 ▾' : '펼치기 ▸');
+    h0.appendChild(arrow);
+    h0.onclick = function () { S.shopOpen = !S.shopOpen; save(); render(); };
+    c0.appendChild(h0);
+    if (S.shopOpen) {
+      c0.appendChild(el('p', 'muted', '몇 개나 팔 것 같은지 넣으면 살 재료와 예상 지출이 계산됩니다.'));
+      S.menus.forEach(function (mn) {
+        var r = el('div', 'formRow');
+        r.appendChild(el('label', null, mn.name));
+        var i = el('input');
+        i.type = 'number'; i.inputMode = 'numeric';
+        i.value = S.plan[mn.id] || ''; i.placeholder = '0';
+        i.oninput = function () { S.plan[mn.id] = num(i.value); save(); renderShopResult(); };
+        r.appendChild(i);
+        c0.appendChild(r);
+      });
+      var res = el('div');
+      res.id = 'shopResult';
+      c0.appendChild(res);
+    }
+    root.appendChild(c0);
+    if (S.shopOpen) renderShopResult();
+
+    // 남은 재료
+    var c = el('div', 'card');
+    c.appendChild(el('h3', null, '📦 남은 재료'));
+    if (!S.items.length) {
+      c.appendChild(el('p', 'muted', '재료가 없습니다. 설정에서 추가하세요.'));
+    } else {
+      var tbl = el('table', 'tbl');
+      var head = el('tr');
+      ['재료', '남음', '', ''].forEach(function (h) { head.appendChild(el('th', null, h)); });
+      tbl.appendChild(head);
+      S.items.forEach(function (it) {
+        var s = stock(it.id);
+        var tr = el('tr', s <= 0 && S.purchases.length ? 'zero' : '');
+        tr.appendChild(el('td', null, it.name));
+        tr.appendChild(el('td', null, round1(s) + it.unit));
+        var t1 = el('td');
+        var bi = el('button', 'miniBtn go', '입고');
+        bi.onclick = function () { askPurchase(it); };
+        t1.appendChild(bi);
+        tr.appendChild(t1);
+        var t2 = el('td');
+        var bo = el('button', 'miniBtn warn', '폐기');
+        bo.onclick = function () { askAdjust(it); };
+        t2.appendChild(bo);
+        tr.appendChild(t2);
+        tbl.appendChild(tr);
+      });
+      c.appendChild(tbl);
+    }
+    root.appendChild(c);
+
+    var c2 = el('div', 'card');
+    c2.appendChild(el('h3', null, '지금 만들 수 있는 개수'));
+    S.menus.forEach(function (mn) {
+      var r = el('div', 'formRow');
+      r.appendChild(el('label', null, mn.name));
+      var m = makeable(mn);
+      r.appendChild(el('span', 'big', m === Infinity ? '—' : m + '개'));
+      c2.appendChild(r);
+    });
+    if (!S.purchases.length) c2.appendChild(el('p', 'muted', '아직 입고 기록이 없어 재고를 세지 않습니다.'));
+    root.appendChild(c2);
+
+    if (S.adjusts.length) {
+      var c3 = el('div', 'card');
+      c3.appendChild(el('h3', null, '폐기 · 서비스'));
+      S.adjusts.slice().reverse().forEach(function (a) {
+        var it = item(a.itemId);
+        c3.appendChild(el('div', 'muted', (it ? it.name : '?') + ' ' + a.qty + (it ? it.unit : '') + ' — ' + a.reason));
+      });
+      root.appendChild(c3);
+    }
+  }
+
+  function shopNeeds() {
+    var need = {};
+    S.menus.forEach(function (mn) {
+      var q = num(S.plan[mn.id]);
+      if (q <= 0) return;
+      mn.recipe.forEach(function (r) { need[r.itemId] = (need[r.itemId] || 0) + num(r.qty) * q; });
+    });
+    return need;
+  }
+
+  function renderShopResult() {
+    var box = document.getElementById('shopResult');
+    if (!box) return;
+    box.innerHTML = '';
+    var need = shopNeeds();
+    var ids = Object.keys(need);
+    if (!ids.length) { box.appendChild(el('p', 'muted', '위에 예상 수량을 넣어 주세요.')); return; }
+
+    var tbl = el('table', 'tbl');
+    var head = el('tr');
+    ['재료', '필요', '살 묶음', '금액'].forEach(function (h) { head.appendChild(el('th', null, h)); });
+    tbl.appendChild(head);
+
+    var total = 0, noPrice = [];
+    ids.forEach(function (id) {
+      var it = item(id);
+      if (!it) return;
+      var short = Math.max(0, need[id] - stock(id));
+      var packs = it.packQty > 0 ? Math.ceil(short / it.packQty) : 0;
+      var cost = packs * num(it.packPrice);
+      total += cost;
+      if (!num(it.packPrice)) noPrice.push(it.name);
+      var tr = el('tr');
+      tr.appendChild(el('td', null, it.name));
+      tr.appendChild(el('td', null, round1(need[id]) + it.unit));
+      tr.appendChild(el('td', null, packs + '묶음'));
+      tr.appendChild(el('td', 'r', num(it.packPrice) ? won(cost) : '단가?'));
+      tbl.appendChild(tr);
+    });
+    box.appendChild(tbl);
+
+    var sum = el('div', 'total');
+    sum.appendChild(el('span', null, '예상 지출'));
+    sum.appendChild(el('strong', null, won(total) + '원'));
+    box.appendChild(sum);
+
+    if (noPrice.length) box.appendChild(el('p', 'warn', '단가 없음: ' + noPrice.join(', ')));
+    box.appendChild(el('p', 'muted', '묶음 단위로만 살 수 있어서 필요량보다 늘 조금 더 사게 됩니다. 남는 만큼은 그대로 손실입니다.'));
+
+    var btn = el('button', 'bigBtn', '장 봤음 → 재고에 넣기');
+    btn.onclick = function () {
+      if (!confirm('위 묶음 수량대로 재고에 넣습니다.')) return;
+      ids.forEach(function (id) {
+        var it = item(id);
+        if (!it) return;
+        var short = Math.max(0, need[id] - stock(id));
+        var packs = it.packQty > 0 ? Math.ceil(short / it.packQty) : 0;
+        if (packs > 0) S.purchases.push({ id: uid(), t: Date.now(), itemId: id, packs: packs, cost: packs * num(it.packPrice) });
+      });
+      save(); toast('재고에 넣었습니다'); render();
+    };
+    box.appendChild(btn);
+  }
+
+  function askPurchase(it) {
+    modal(function (box, close) {
+      box.appendChild(el('h3', null, it.name + ' 입고'));
+      box.appendChild(el('p', 'muted', '1묶음 = ' + it.packQty + it.unit));
+      var packs = el('input', 'bigInput');
+      packs.type = 'number'; packs.inputMode = 'numeric'; packs.placeholder = '묶음 수';
+      box.appendChild(packs);
+      var cost = el('input', 'bigInput');
+      cost.type = 'number'; cost.inputMode = 'numeric'; cost.placeholder = '쓴 돈 (원)';
+      box.appendChild(cost);
+      var ok = el('button', 'bigBtn', '넣기');
+      ok.onclick = function () {
+        var p = num(packs.value);
+        if (p <= 0) { alert('묶음 수를 넣어 주세요.'); return; }
+        var c = num(cost.value) || p * num(it.packPrice);
+        S.purchases.push({ id: uid(), t: Date.now(), itemId: it.id, packs: p, cost: c });
+        if (!num(it.packPrice) && c > 0) it.packPrice = c / p;   // 단가를 몰랐으면 이번 매입가로 채운다
+        save(); close(); render();
+      };
+      box.appendChild(ok);
+      setTimeout(function () { packs.focus(); }, 60);
+    });
+  }
+
+  function askAdjust(it) {
+    modal(function (box, close) {
+      box.appendChild(el('h3', null, it.name + ' 빼기'));
+      var qty = el('input', 'bigInput');
+      qty.type = 'number'; qty.inputMode = 'decimal'; qty.placeholder = '수량 (' + it.unit + ')';
+      box.appendChild(qty);
+      var chosen = { v: '폐기' };
+      var row = el('div', 'quickRow');
+      ['폐기', '서비스', '시식', '떨어뜨림', '계량 오차'].forEach(function (r) {
+        var b = el('button', 'quickBtn' + (r === '폐기' ? ' on' : ''), r);
+        b.onclick = function () {
+          chosen.v = r;
+          var all = row.querySelectorAll('button');
+          for (var i = 0; i < all.length; i++) all[i].classList.remove('on');
+          b.classList.add('on');
+        };
+        row.appendChild(b);
+      });
+      box.appendChild(row);
+      var ok = el('button', 'bigBtn', '빼기');
+      ok.onclick = function () {
+        var q = num(qty.value);
+        if (q <= 0) { alert('수량을 넣어 주세요.'); return; }
+        S.adjusts.push({ id: uid(), t: Date.now(), itemId: it.id, qty: q, reason: chosen.v });
+        save(); close(); render();
+      };
+      box.appendChild(ok);
+      setTimeout(function () { qty.focus(); }, 60);
+    });
+  }
+
+  /* ================= 마감 ================= */
+  function viewClose(root) {
+    var c1 = el('div', 'card');
+    c1.appendChild(el('h3', null, '오늘 판 것'));
+    if (!S.sales.length) c1.appendChild(el('p', 'muted', '아직 판매 기록이 없습니다.'));
+    else {
+      var t1 = el('table', 'tbl');
+      var h1 = el('tr');
+      ['메뉴', '개수', '매출'].forEach(function (h) { h1.appendChild(el('th', null, h)); });
+      t1.appendChild(h1);
+      S.menus.forEach(function (mn) {
+        var q = soldQty(mn.id);
+        if (!q) return;
+        var tr = el('tr');
+        tr.appendChild(el('td', null, mn.name));
+        tr.appendChild(el('td', null, q + '개'));
+        tr.appendChild(el('td', 'r', won(q * mn.price)));
+        t1.appendChild(tr);
+      });
+      c1.appendChild(t1);
+    }
+    var tot = el('div', 'total');
+    tot.appendChild(el('span', null, '총매출'));
+    tot.appendChild(el('strong', null, won(salesTotal()) + '원'));
+    c1.appendChild(tot);
+    PAYS.forEach(function (p) {
+      var r = el('div', 'formRow');
+      r.appendChild(el('label', null, p[0]));
+      r.appendChild(el('span', null, won(salesTotal(p[0])) + '원'));
+      c1.appendChild(r);
+    });
+    root.appendChild(c1);
+
+    var c2 = el('div', 'card');
+    c2.appendChild(el('h3', null, '💵 현금 맞춰보기'));
+    var r0 = el('div', 'formRow');
+    r0.appendChild(el('label', null, '준비한 거스름돈'));
+    var i0 = el('input');
+    i0.type = 'number'; i0.inputMode = 'numeric'; i0.value = S.cash0 || '';
+    i0.oninput = function () { S.cash0 = num(i0.value); save(); r1v.textContent = won(num(S.cash0) + salesTotal('현금')) + '원'; };
+    r0.appendChild(i0);
+    c2.appendChild(r0);
+    var r1 = el('div', 'formRow');
+    r1.appendChild(el('label', null, '통에 있어야 할 현금'));
+    var r1v = el('span', 'big', won(num(S.cash0) + salesTotal('현금')) + '원');
+    r1.appendChild(r1v);
+    c2.appendChild(r1);
+    root.appendChild(c2);
+
+    var c3 = el('div', 'card');
+    c3.appendChild(el('h3', null, '⚖️ 재료 세어보기'));
+    var t3 = el('table', 'tbl');
+    var h3 = el('tr');
+    ['재료', '장부', '실제', '차이'].forEach(function (h) { h3.appendChild(el('th', null, h)); });
+    t3.appendChild(h3);
+    S.items.forEach(function (it) {
+      var book = round1(stock(it.id));
+      var tr = el('tr');
+      tr.appendChild(el('td', null, it.name));
+      tr.appendChild(el('td', null, book + it.unit));
+      var td = el('td');
+      var inp = el('input', 'sm');
+      inp.type = 'number'; inp.inputMode = 'decimal';
+      inp.value = (S.counted[it.id] === undefined || S.counted[it.id] === '') ? '' : S.counted[it.id];
+      td.appendChild(inp);
+      tr.appendChild(td);
+      var d0 = inp.value === '' ? null : num(inp.value) - book;
+      var diff = el('td', 'r' + (d0 !== null && Math.abs(d0) >= 0.05 ? ' warn' : ''),
+        d0 === null ? '—' : (d0 > 0 ? '+' : '') + round1(d0));
+      tr.appendChild(diff);
+      inp.oninput = function () {
+        S.counted[it.id] = inp.value === '' ? '' : num(inp.value);
+        save();
+        var d = inp.value === '' ? null : num(inp.value) - book;
+        diff.textContent = d === null ? '—' : (d > 0 ? '+' : '') + round1(d);
+        diff.className = 'r' + (d !== null && Math.abs(d) >= 0.05 ? ' warn' : '');
+      };
+      t3.appendChild(tr);
+    });
+    c3.appendChild(t3);
+    c3.appendChild(el('p', 'muted', '개수로 세는 재료는 대개 딱 맞고, 무게로 재는 재료는 잘 안 맞습니다. 그 차이가 오늘의 손실입니다.'));
+    root.appendChild(c3);
+
+    var sales = salesTotal(), cost = cogs(), loss = lossCost(), spent = spentTotal();
+    var c4 = el('div', 'card');
+    var head = el('div', 'rowBetween');
+    head.appendChild(el('h3', null, '💰 남은 돈'));
+    var tg = el('button', 'miniBtn', S.ledgerMode === 'simple' ? '회계부로 보기' : '간단히 보기');
+    tg.onclick = function () { S.ledgerMode = S.ledgerMode === 'simple' ? 'double' : 'simple'; save(); render(); };
+    head.appendChild(tg);
+    c4.appendChild(head);
+
+    if (S.ledgerMode === 'simple') {
+      [['판 돈', sales], ['판 만큼 나간 재료값', -cost], ['버린 재료값', -loss]].forEach(function (p) {
+        var r = el('div', 'formRow');
+        r.appendChild(el('label', null, p[0]));
+        r.appendChild(el('span', null, won(p[1]) + '원'));
+        c4.appendChild(r);
+      });
+      var t = el('div', 'total');
+      t.appendChild(el('span', null, '남은 돈'));
+      t.appendChild(el('strong', null, won(sales - cost - loss) + '원'));
+      c4.appendChild(t);
+      var r2 = el('div', 'formRow');
+      r2.appendChild(el('label', null, '(참고) 장 보는 데 쓴 돈'));
+      r2.appendChild(el('span', 'muted', won(spent) + '원'));
+      c4.appendChild(r2);
+      c4.appendChild(el('p', 'muted', '사 왔지만 안 판 재료는 아직 남아 있으니 비용에 넣지 않았습니다.'));
+    } else {
+      c4.appendChild(el('p', 'muted', '같은 하루를 회계부 방식으로 적으면 이렇게 됩니다.'));
+      var t2 = el('table', 'tbl');
+      var h2 = el('tr');
+      ['차변 (들어옴)', '금액', '대변 (나감)', '금액'].forEach(function (h) { h2.appendChild(el('th', null, h)); });
+      t2.appendChild(h2);
+      function je(dr, drv, cr, crv) {
+        var tr = el('tr');
+        tr.appendChild(el('td', null, dr));
+        tr.appendChild(el('td', 'r', won(drv)));
+        tr.appendChild(el('td', null, cr));
+        tr.appendChild(el('td', 'r', won(crv)));
+        t2.appendChild(tr);
+      }
+      if (salesTotal('현금')) je('현금', salesTotal('현금'), '매출', salesTotal('현금'));
+      if (salesTotal('이체')) je('보통예금', salesTotal('이체'), '매출', salesTotal('이체'));
+      if (salesTotal('쿠폰')) je('미수금', salesTotal('쿠폰'), '매출', salesTotal('쿠폰'));
+      if (cost) je('매출원가', cost, '재료', cost);
+      if (loss) je('재고감모손실', loss, '재료', loss);
+      c4.appendChild(t2);
+      c4.appendChild(el('p', 'muted', '왼쪽과 오른쪽 합이 항상 같습니다. 한 건을 두 번 적어 서로 검산되게 하는 방식이라 복식부기라고 합니다.'));
+    }
+    root.appendChild(c4);
+
+    var c5 = el('div', 'card');
+    var ex = el('button', 'bigBtn', '📄 엑셀로 내보내기');
+    ex.onclick = exportCSV;
+    c5.appendChild(ex);
+    c5.appendChild(el('p', 'muted', '판매 기록·재료·마감이 한 파일로 저장됩니다.'));
+    root.appendChild(c5);
+  }
+
+  function exportCSV() {
+    var rows = [];
+    function push(a) {
+      rows.push((a || []).map(function (v) {
+        var s = String(v === undefined || v === null ? '' : v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }).join(','));
+    }
+    push([(S.boothName || '부스') + ' 마감']);
+    push([]);
+    push(['■ 판매 기록']);
+    push(['시각', '메뉴', '단가', '수량', '금액', '결제']);
+    S.sales.forEach(function (s) {
+      var d = new Date(s.t);
+      var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+      s.lines.forEach(function (l) { push([hm, l.name, l.price, l.qty, l.price * l.qty, s.pay]); });
+    });
+    push([]);
+    push(['■ 메뉴별 합계']);
+    push(['메뉴', '판매가', '개수', '매출', '개당원가', '이익']);
+    S.menus.forEach(function (mn) {
+      var q = soldQty(mn.id);
+      push([mn.name, mn.price, q, q * mn.price, Math.round(menuCost(mn)), Math.round(q * (mn.price - menuCost(mn)))]);
+    });
+    push([]);
+    push(['■ 재료']);
+    push(['재료', '단위', '묶음크기', '묶음가격', '입고', '판매소모', '폐기', '장부재고', '실제재고', '차이']);
+    S.items.forEach(function (it) {
+      var inQ = stockIn(it.id), used = usedBySales(it.id), adj = adjusted(it.id), book = inQ - used - adj;
+      var real = (S.counted[it.id] === undefined || S.counted[it.id] === '') ? '' : num(S.counted[it.id]);
+      push([it.name, it.unit, it.packQty, it.packPrice, inQ, used, adj, round1(book), real,
+        real === '' ? '' : round1(real - book)]);
+    });
+    push([]);
+    push(['■ 마감']);
+    push(['총매출', salesTotal()]);
+    PAYS.forEach(function (p) { push([p[0], salesTotal(p[0])]); });
+    push(['매출원가', Math.round(cogs())]);
+    push(['폐기손실', Math.round(lossCost())]);
+    push(['남은 돈', Math.round(salesTotal() - cogs() - lossCost())]);
+    push(['장 보는 데 쓴 돈', spentTotal()]);
+    push(['준비한 거스름돈', S.cash0]);
+    push(['있어야 할 현금', num(S.cash0) + salesTotal('현금')]);
+
+    var blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (S.boothName || '부스') + '_마감.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  /* ================= 설정 ================= */
+  function viewSetup(root) {
+    var c0 = el('div', 'card');
+    c0.appendChild(el('h3', null, '부스 이름'));
+    var n0 = el('input');
+    n0.value = S.boothName || '';
+    n0.placeholder = '예: 3학년 1반 비빔면';
+    n0.oninput = function () { S.boothName = n0.value; save(); $('#boothName').textContent = S.boothName || '축제 부스'; };
+    c0.appendChild(n0);
+    c0.appendChild(el('p', 'muted', '메뉴 꾸러미 불러오기'));
+    var pr = el('div', 'quickRow');
+    Object.keys(PRESETS).forEach(function (k) {
+      var b = el('button', 'quickBtn' + (S.preset === k ? ' on' : ''), PRESETS[k].name);
+      b.onclick = function () {
+        if (S.sales.length && !confirm('판매 기록이 이미 있습니다. 메뉴를 바꾸면 기록이 어긋납니다. 계속할까요?')) return;
+        var p = PRESETS[k];
+        S.preset = k;
+        if (!S.boothName) S.boothName = p.name;
+        S.items = JSON.parse(JSON.stringify(p.items));
+        S.menus = JSON.parse(JSON.stringify(p.menus));
+        save(); go('board');
+      };
+      pr.appendChild(b);
+    });
+    c0.appendChild(pr);
+    root.appendChild(c0);
+
+    var c1 = el('div', 'card');
+    c1.appendChild(el('h3', null, '💳 입금 계좌'));
+    c1.appendChild(el('p', 'muted', '아직 안 정해졌으면 비워 두세요. 채우는 순간 송금 QR이 만들어집니다.'));
+    [['bank', '은행', '예: 국민'], ['number', '계좌번호', '숫자만'], ['holder', '예금주', '이름']].forEach(function (f) {
+      var r = el('div', 'formRow');
+      r.appendChild(el('label', null, f[1]));
+      var i = el('input');
+      i.value = S.account[f[0]] || '';
+      i.placeholder = f[2];
+      i.oninput = function () { S.account[f[0]] = i.value; save(); };
+      r.appendChild(i);
+      c1.appendChild(r);
+    });
+    var rl = el('div', 'formRow');
+    rl.appendChild(el('label', null, '송금 링크'));
+    var il = el('input');
+    il.value = S.account.link || '';
+    il.placeholder = 'https://.../{금액}';
+    il.oninput = function () { S.account.link = il.value; save(); };
+    rl.appendChild(il);
+    c1.appendChild(rl);
+    c1.appendChild(el('p', 'muted',
+      '송금 링크를 넣으면 계좌번호 대신 그 링크로 QR을 만듭니다. 링크 안에 {금액}이라고 적어 두면 그 자리에 결제 금액이 들어갑니다. 행사 전에 실제 휴대폰으로 한 번 찍어 보세요.'));
+    root.appendChild(c1);
+
+    var c2 = el('div', 'card');
+    c2.appendChild(el('h3', null, '🥕 재료'));
+    var t2 = el('table', 'tbl');
+    var h2 = el('tr');
+    ['이름', '단위', '1묶음', '묶음값', ''].forEach(function (h) { h2.appendChild(el('th', null, h)); });
+    t2.appendChild(h2);
+    S.items.forEach(function (it, idx) {
+      var tr = el('tr');
+      [['name', 'text'], ['unit', 'text'], ['packQty', 'number'], ['packPrice', 'number']].forEach(function (f) {
+        var td = el('td');
+        var i = el('input', 'sm');
+        i.type = f[1];
+        i.value = it[f[0]];
+        i.oninput = function () { it[f[0]] = f[1] === 'number' ? num(i.value) : i.value; save(); };
+        td.appendChild(i);
+        tr.appendChild(td);
+      });
+      var td = el('td');
+      var d = el('button', 'miniBtn warn', '×');
+      d.onclick = function () {
+        if (!confirm(it.name + ' 을(를) 지웁니다. 레시피에서도 빠집니다.')) return;
+        S.items.splice(idx, 1);
+        S.menus.forEach(function (mn) { mn.recipe = mn.recipe.filter(function (r) { return r.itemId !== it.id; }); });
+        save(); render();
+      };
+      td.appendChild(d);
+      tr.appendChild(td);
+      t2.appendChild(tr);
+    });
+    c2.appendChild(t2);
+    var add2 = el('button', 'miniBtn', '+ 재료 추가');
+    add2.onclick = function () { S.items.push({ id: uid(), name: '새 재료', unit: '개', packQty: 1, packPrice: 0 }); save(); render(); };
+    c2.appendChild(add2);
+    root.appendChild(c2);
+
+    var c3 = el('div', 'card');
+    c3.appendChild(el('h3', null, '🍜 레시피'));
+    c3.appendChild(el('p', 'muted', '한 개 팔면 재료가 얼마나 빠지는지 적어 두면, 팔 때마다 재고가 저절로 줄어듭니다.'));
+    S.menus.forEach(function (mn) {
+      var box = el('div', 'menuEdit');
+      box.appendChild(el('div', 'rowBetween', ''));
+      box.lastChild.appendChild(el('strong', null, mn.name));
+      box.lastChild.appendChild(el('span', 'muted', won(mn.price) + '원'));
+      S.items.forEach(function (it) {
+        var cur = null;
+        for (var i = 0; i < mn.recipe.length; i++) if (mn.recipe[i].itemId === it.id) cur = mn.recipe[i];
+        var r = el('div', 'recipeRow');
+        r.appendChild(el('label', null, it.name));
+        var i2 = el('input');
+        i2.type = 'number'; i2.inputMode = 'decimal';
+        i2.value = cur ? cur.qty : ''; i2.placeholder = '0';
+        i2.oninput = function () {
+          var v = num(i2.value);
+          mn.recipe = mn.recipe.filter(function (x) { return x.itemId !== it.id; });
+          if (v > 0) mn.recipe.push({ itemId: it.id, qty: v });
+          save();
+        };
+        r.appendChild(i2);
+        r.appendChild(el('span', null, it.unit));
+        box.appendChild(r);
+      });
+      box.appendChild(el('p', 'muted', '원가 ' + won(menuCost(mn)) + '원 · 이익 ' + won(mn.price - menuCost(mn)) + '원'));
+      c3.appendChild(box);
+    });
+    root.appendChild(c3);
+
+    var c4 = el('div', 'card');
+    c4.appendChild(el('h3', null, '💾 데이터'));
+    var bk = el('button', 'miniBtn', '백업 내려받기');
+    bk.onclick = function () {
+      var blob = new Blob([JSON.stringify(S)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (S.boothName || '부스') + '_백업.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    };
+    c4.appendChild(bk);
+    var file = el('input');
+    file.type = 'file'; file.accept = '.json'; file.style.display = 'none';
+    file.onchange = function () {
+      var f = file.files[0];
+      if (!f) return;
+      var rd = new FileReader();
+      rd.onload = function () {
+        try { S = Object.assign(blank(), JSON.parse(rd.result)); save(); render(); toast('불러왔습니다'); }
+        catch (e) { alert('파일을 읽지 못했습니다.'); }
+      };
+      rd.readAsText(f);
+    };
+    var rs = el('button', 'miniBtn', '백업 불러오기');
+    rs.onclick = function () { file.click(); };
+    c4.appendChild(rs);
+    c4.appendChild(file);
+    var cl = el('button', 'miniBtn warn', '오늘 기록 지우기');
+    cl.onclick = function () {
+      if (!confirm('판매·입고·폐기 기록을 지웁니다.\n메뉴와 재료 설정은 그대로 남습니다.')) return;
+      S.sales = []; S.purchases = []; S.adjusts = []; S.counted = {};
+      save(); render(); toast('기록을 비웠습니다');
+    };
+    c4.appendChild(cl);
+    c4.appendChild(el('p', 'warn', '이 앱은 이 기기의 브라우저에만 저장됩니다. 축제 당일에는 종이에도 함께 적어 두세요.'));
+    root.appendChild(c4);
+  }
+
+  /* ================= 시작 ================= */
+  function init() {
+    load();
+    var bar = document.getElementById('tabs');
+    [['sell', '💰', '판매'], ['board', '📋', '메뉴판'], ['stock', '📦', '재고'], ['close', '📊', '마감']]
+      .forEach(function (t) {
+        var b = document.createElement('button');
+        b.dataset.v = t[0];
+        b.innerHTML = '<span class="ic">' + t[1] + '</span><span class="lb">' + t[2] + '</span>';
+        b.onclick = function () { go(t[0]); };
+        bar.appendChild(b);
+      });
+    document.getElementById('gear').onclick = function () { go('setup'); };
+    if (!S.menus.length) view = 'setup';
+    render();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+  window.__booth = {
+    state: function () { return S; },
+    go: go, stock: stock, makeable: makeable, payString: payString,
+    reset: function () { S = blank(); save(); render(); }
+  };
+})();
+
+</script>
+</body>
+</html>
