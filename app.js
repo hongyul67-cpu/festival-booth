@@ -17,23 +17,17 @@
   // 매입가는 장을 봐야 아는 값이라 0으로 둔다. 판매가는 고치기 쉽게 어림값만 넣어 둔다.
   var PRESETS = {
     ours: {
-      name: '비빔면 · 대패삼겹살',
+      name: '대패삼겹살',
       items: [
-        { id: 'i1', name: '비빔면', unit: '개', packQty: 5, packPrice: 0 },
-        { id: 'i2', name: '대패삼겹살', unit: 'g', packQty: 1000, packPrice: 0 },
-        { id: 'i3', name: '상추', unit: '장', packQty: 50, packPrice: 0 },
-        { id: 'i4', name: '그릇', unit: '개', packQty: 50, packPrice: 0 },
-        { id: 'i5', name: '젓가락', unit: '개', packQty: 100, packPrice: 0 }
+        { id: 'i1', name: '대패삼겹살', unit: 'g', packQty: 1000, packPrice: 0 },
+        { id: 'i2', name: '콜라(캔)', unit: '개', packQty: 24, packPrice: 0 },
+        { id: 'i3', name: '접시', unit: '개', packQty: 50, packPrice: 0 },
+        { id: 'i4', name: '젓가락', unit: '개', packQty: 100, packPrice: 0 }
       ],
       menus: [
-        { id: 'm1', name: '세트', price: 4000, photo: '', recipe: [
-          { itemId: 'i1', qty: 1 }, { itemId: 'i2', qty: 150 },
-          { itemId: 'i3', qty: 3 }, { itemId: 'i4', qty: 1 }, { itemId: 'i5', qty: 1 }] },
-        { id: 'm2', name: '비빔면', price: 2000, photo: '', recipe: [
-          { itemId: 'i1', qty: 1 }, { itemId: 'i4', qty: 1 }, { itemId: 'i5', qty: 1 }] },
-        { id: 'm3', name: '대패삼겹살', price: 3000, photo: '', recipe: [
-          { itemId: 'i2', qty: 150 }, { itemId: 'i3', qty: 3 },
-          { itemId: 'i4', qty: 1 }, { itemId: 'i5', qty: 1 }] }
+        { id: 'm1', name: '대패삼겹살', price: 3000, photo: '', recipe: [
+          { itemId: 'i1', qty: 120 }, { itemId: 'i3', qty: 1 }, { itemId: 'i4', qty: 1 }] },
+        { id: 'm2', name: '콜라 추가', price: 500, photo: '', recipe: [{ itemId: 'i2', qty: 1 }] }
       ]
     },
     bingsu: {
@@ -43,39 +37,28 @@
         { id: 'i2', name: '연유', unit: 'ml', packQty: 500, packPrice: 0 },
         { id: 'i3', name: '팥', unit: 'g', packQty: 500, packPrice: 0 },
         { id: 'i4', name: '떡', unit: '개', packQty: 30, packPrice: 0 },
-        { id: 'i5', name: '미숫가루', unit: 'g', packQty: 300, packPrice: 0 },
-        { id: 'i6', name: '빙수 그릇', unit: '개', packQty: 50, packPrice: 0 },
-        { id: 'i7', name: '숟가락', unit: '개', packQty: 100, packPrice: 0 }
+        { id: 'i5', name: '빙수 컵', unit: '개', packQty: 50, packPrice: 0 },
+        { id: 'i6', name: '숟가락', unit: '개', packQty: 100, packPrice: 0 }
       ],
       menus: [
-        { id: 'm1', name: '팥빙수', price: 4000, photo: '', recipe: [
-          { itemId: 'i1', qty: 250 }, { itemId: 'i2', qty: 40 }, { itemId: 'i3', qty: 60 },
-          { itemId: 'i4', qty: 3 }, { itemId: 'i6', qty: 1 }, { itemId: 'i7', qty: 1 }] },
-        { id: 'm2', name: '인절미빙수', price: 4500, photo: '', recipe: [
-          { itemId: 'i1', qty: 250 }, { itemId: 'i2', qty: 40 }, { itemId: 'i5', qty: 30 },
-          { itemId: 'i4', qty: 3 }, { itemId: 'i6', qty: 1 }, { itemId: 'i7', qty: 1 }] }
+        { id: 'm1', name: '빙수', price: 3000, photo: '', recipe: [
+          { itemId: 'i1', qty: 200 }, { itemId: 'i2', qty: 30 }, { itemId: 'i3', qty: 50 },
+          { itemId: 'i4', qty: 3 }, { itemId: 'i5', qty: 1 }, { itemId: 'i6', qty: 1 }] }
       ]
     },
     takoyaki: {
       name: '타코야끼',
       items: [
-        { id: 'i1', name: '반죽가루', unit: 'g', packQty: 1000, packPrice: 0 },
-        { id: 'i2', name: '문어', unit: 'g', packQty: 500, packPrice: 0 },
+        { id: 'i1', name: '타코야끼(냉동)', unit: '알', packQty: 50, packPrice: 0 },
+        { id: 'i2', name: '소스', unit: 'ml', packQty: 500, packPrice: 0 },
         { id: 'i3', name: '가쓰오부시', unit: 'g', packQty: 100, packPrice: 0 },
-        { id: 'i4', name: '소스', unit: 'ml', packQty: 500, packPrice: 0 },
-        { id: 'i5', name: '마요네즈', unit: 'ml', packQty: 500, packPrice: 0 },
-        { id: 'i6', name: '종이 용기', unit: '개', packQty: 50, packPrice: 0 },
-        { id: 'i7', name: '이쑤시개', unit: '개', packQty: 100, packPrice: 0 }
+        { id: 'i4', name: '종이 용기', unit: '개', packQty: 50, packPrice: 0 },
+        { id: 'i5', name: '이쑤시개', unit: '개', packQty: 100, packPrice: 0 }
       ],
       menus: [
-        { id: 'm1', name: '6알', price: 3000, photo: '', recipe: [
-          { itemId: 'i1', qty: 90 }, { itemId: 'i2', qty: 30 }, { itemId: 'i3', qty: 3 },
-          { itemId: 'i4', qty: 15 }, { itemId: 'i5', qty: 10 },
-          { itemId: 'i6', qty: 1 }, { itemId: 'i7', qty: 1 }] },
-        { id: 'm2', name: '8알', price: 4000, photo: '', recipe: [
-          { itemId: 'i1', qty: 120 }, { itemId: 'i2', qty: 40 }, { itemId: 'i3', qty: 4 },
-          { itemId: 'i4', qty: 20 }, { itemId: 'i5', qty: 13 },
-          { itemId: 'i6', qty: 1 }, { itemId: 'i7', qty: 1 }] }
+        { id: 'm1', name: '타코야끼', price: 2000, photo: '', recipe: [
+          { itemId: 'i1', qty: 5 }, { itemId: 'i2', qty: 15 }, { itemId: 'i3', qty: 2 },
+          { itemId: 'i4', qty: 1 }, { itemId: 'i5', qty: 1 }] }
       ]
     }
   };
@@ -432,10 +415,9 @@
 
   function payTransfer(total) {
     modal(function (box, close) {
-      box.appendChild(el('h3', null, '이체 ' + won(total) + '원'));
-      var wrap = el('div', 'qrWrap');
-      box.appendChild(wrap);
-      drawQR(wrap, total);
+      box.appendChild(el('h3', null, '이체'));
+      if (hasAccount()) box.appendChild(accountBox(total));
+      else { var wrap = el('div', 'qrWrap'); box.appendChild(wrap); drawQR(wrap, total); }
       var ok = el('button', 'bigBtn', '입금 확인함 · 완료');
       ok.onclick = function () { close(); finishSale('이체', total, 0); };
       box.appendChild(ok);
@@ -509,6 +491,39 @@
     wrap.appendChild(cv);
     wrap.appendChild(el('div', 'qrAmt', label !== undefined ? label : won(amount) + '원'));
     wrap.appendChild(el('div', 'qrText', text));
+  }
+
+  // 계좌 안내 — 은행 앱은 계좌 글자 QR을 못 읽으므로, 손님에게는 크게 적힌 계좌 + [복사] 단추를 보여 준다.
+  // 송금 링크(토스·카카오페이 등)를 넣어 둔 부스만 QR을 함께 띄운다.
+  function hasAccount() { var a = S.account; return !!(a.number || a.link); }
+  function copyText(t) {
+    function ok() { toast('복사했습니다. 은행 앱에 붙여 넣으세요'); }
+    function old() {
+      var ta = el('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); ok(); } catch (e) { alert(t); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(ok, old);
+    else old();
+  }
+  function accountBox(amount) {
+    var a = S.account;
+    var box = el('div', 'acct');
+    if (amount) box.appendChild(el('div', 'acctAmt', won(amount) + '원'));
+    if (a.number) {
+      box.appendChild(el('div', 'acctBank', (a.bank || '') + (a.holder ? ' · 예금주 ' + a.holder : '')));
+      box.appendChild(el('div', 'acctNo', a.number));
+      var cp = el('button', 'miniBtn go', '📋 계좌번호 복사');
+      cp.onclick = function (e) { e.stopPropagation(); copyText(((a.bank || '') + ' ' + a.number).trim()); };
+      box.appendChild(cp);
+    }
+    if (a.link) {
+      var w = el('div', 'qrWrap');
+      box.appendChild(w);
+      drawQR(w, amount || null, amount ? won(amount) + '원' : '폰 카메라로 찍으면 송금 화면이 열립니다');
+    }
+    return box;
   }
 
   function askQR() {
@@ -640,6 +655,7 @@
     var grid = el('div', 'boardGrid');
     S.menus.forEach(function (mn) { grid.appendChild(boardCard(mn, true)); });
     root.appendChild(grid);
+    root.appendChild(accountCard());
     root.appendChild(themeCard());
 
     var c2 = el('div', 'card');
@@ -759,12 +775,10 @@
       clr.onclick = function () { cart = []; render(); };
       bar.appendChild(clr);
       root.appendChild(bar);
-    } else if (payString(1)) {
+    } else if (hasAccount()) {
       var qc = el('div', 'card');
-      qc.appendChild(el('h3', null, '계좌이체도 됩니다'));
-      var w = el('div', 'qrWrap');
-      qc.appendChild(w);
-      drawQR(w, null, '');   // 메뉴판에는 금액 없이 계좌만
+      qc.appendChild(el('h3', null, '💳 계좌이체도 됩니다'));
+      qc.appendChild(accountBox(null));
       root.appendChild(qc);
     }
   }
@@ -779,14 +793,13 @@
       var cash = el('button', 'bigBtn', '💵 현금으로 낼게요');
       cash.onclick = function () { close(); finishSale('현금', total, 0, '손님'); };
       box.appendChild(cash);
-      if (payString(1)) {
+      if (hasAccount()) {
         var tr = el('button', 'bigBtn blueBtn', '📱 계좌이체');
         tr.onclick = function () {
           box.innerHTML = '';
-          box.appendChild(el('h3', null, '이체 ' + won(total) + '원'));
-          var wrap = el('div', 'qrWrap');
-          box.appendChild(wrap);
-          drawQR(wrap, total);
+          box.appendChild(el('h3', null, '계좌이체'));
+          box.appendChild(accountBox(total));
+          box.appendChild(el('p', 'muted', '보낸 뒤 부스 사람에게 이체 화면을 보여 주세요.'));
           var ok = el('button', 'bigBtn', '보냈어요 · 주문하기');
           ok.onclick = function () { close(); finishSale('이체', total, 0, '손님'); };
           box.appendChild(ok);
@@ -1326,6 +1339,35 @@
     var m = document.querySelector('meta[name=theme-color]');
     for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === t && m) m.setAttribute('content', THEMES[i][2]);
   }
+  function accountCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h3', null, '💳 우리 부스 입금 계좌'));
+    c.appendChild(el('p', 'muted', '부스마다 따로 적습니다. 적어 두면 손님 화면에 계좌와 [복사] 단추가 뜹니다. 비워 두면 현금만 받습니다.'));
+    [['bank', '은행', '예: 국민'], ['number', '계좌번호', '예: 123-45-67890'], ['holder', '예금주', '이름']].forEach(function (f) {
+      var r = el('div', 'formRow');
+      r.appendChild(el('label', null, f[1]));
+      var i = el('input');
+      i.value = S.account[f[0]] || '';
+      i.placeholder = f[2];
+      i.style.width = '170px';
+      // 화면 전체를 다시 그리면 다음 칸으로 옮겨 갈 때 입력이 끊기므로, 아래 미리보기만 바꾼다
+      i.oninput = function () { S.account[f[0]] = i.value; save(); preview(); };
+      r.appendChild(i);
+      c.appendChild(r);
+    });
+    var pv = el('div');
+    c.appendChild(pv);
+    function preview() {
+      pv.innerHTML = '';
+      if (hasAccount()) {
+        pv.appendChild(el('p', 'muted', '손님 화면에는 이렇게 보입니다'));
+        pv.appendChild(accountBox(null));
+      }
+    }
+    preview();
+    return c;
+  }
+
   function themeCard() {
     var c = el('div', 'card');
     c.appendChild(el('h3', null, '🎨 디자인 테마'));
