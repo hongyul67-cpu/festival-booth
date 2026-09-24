@@ -10,6 +10,7 @@
     --bg:#FFF6EE; --card:#FFFFFF; --ink:#3E3733; --dim:#9A8F88;
     --line:#F0E4DA; --pink:#FF8FA3; --pink-d:#F76B84; --yellow:#FFCF5C;
     --mint:#6ED2A8; --blue:#7FB8F5; --red:#F2765F;
+    --field:#FFFDFB; --soft:#FDF0E6; --hl:#FFF0F3; --veil:rgba(255,255,255,.72);
     --r:22px; --sh:0 4px 0 rgba(0,0,0,.05), 0 8px 24px rgba(190,150,120,.14);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
@@ -22,7 +23,7 @@
   }
   button,input{font-family:inherit; font-size:inherit; color:inherit}
   input{
-    background:#FFFDFB; border:2px solid var(--line); border-radius:14px;
+    background:var(--field); border:2px solid var(--line); border-radius:14px;
     padding:10px 12px; min-width:0; width:100%;
   }
   input:focus{outline:none; border-color:var(--pink)}
@@ -34,8 +35,10 @@
     padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
     background:var(--bg); border-bottom:1px solid var(--line);
   }
-  header .name{font-weight:800; font-size:17px; letter-spacing:-.03em}
-  header .sum{margin-left:auto; font-size:13px; color:var(--dim); font-weight:600; text-align:right}
+  header .name{font-weight:800; font-size:17px; letter-spacing:-.03em; background:none; border:none; padding:4px 0; cursor:pointer; text-align:left;
+    flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  header .sum{white-space:nowrap}
+  header .sum{margin-left:0; font-size:13px; color:var(--dim); font-weight:600; text-align:right}
   header .gear{
     background:var(--card); border:2px solid var(--line); border-radius:14px;
     width:40px; height:40px; font-size:18px; flex:none; box-shadow:var(--sh); cursor:pointer;
@@ -62,7 +65,7 @@
   .menuBtn:active{transform:scale(.96)}
   .menuBtn .thumb{
     width:100%; aspect-ratio:16/10; border-radius:14px; object-fit:cover;
-    margin-bottom:8px; background:#FDF0E6;
+    margin-bottom:8px; background:var(--soft);
   }
   .menuBtn .mName{font-weight:800; font-size:16px; letter-spacing:-.02em}
   .menuBtn .mPrice{font-weight:800; font-size:19px; color:var(--pink-d)}
@@ -78,7 +81,7 @@
   .cartRow .cSum{width:74px; text-align:right; font-weight:700; font-size:15px}
   .qtyBtn{
     width:34px; height:34px; flex:none; border:none; border-radius:12px;
-    background:#FFF0F3; color:var(--pink-d); font-size:19px; font-weight:800; cursor:pointer;
+    background:var(--hl); color:var(--pink-d); font-size:19px; font-weight:800; cursor:pointer;
   }
   .qtyBtn:active{transform:scale(.92)}
   .total{
@@ -113,7 +116,7 @@
     background:#FFF5F3; color:var(--red); font-weight:700; cursor:pointer; margin-top:8px;
   }
   .miniBtn{
-    border:2px solid var(--line); border-radius:12px; background:#FFFDFB;
+    border:2px solid var(--line); border-radius:12px; background:var(--field);
     padding:7px 11px; font-size:13.5px; font-weight:700; cursor:pointer; margin:3px 4px 3px 0;
   }
   .miniBtn.warn{border-color:#FBD9D2; color:var(--red); background:#FFF7F5}
@@ -144,7 +147,7 @@
     box-shadow:var(--sh); position:relative;
   }
   .boardCard .ph{
-    width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#FDF0E6;
+    width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:var(--soft);
     border:none;
   }
   .boardCard .ph.empty{
@@ -159,7 +162,7 @@
   }
   .boardCard .bp:focus{outline:2px dashed var(--pink); border-radius:8px}
   .soldout{
-    position:absolute; inset:0; background:rgba(255,255,255,.72);
+    position:absolute; inset:0; background:var(--veil);
     display:flex; align-items:center; justify-content:center;
     font-weight:900; font-size:20px; color:var(--red); letter-spacing:.05em;
   }
@@ -194,10 +197,10 @@
   }
   .quickRow{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:6px}
   .quickBtn{
-    border:2px solid var(--line); background:#FFFDFB; border-radius:12px;
+    border:2px solid var(--line); background:var(--field); border-radius:12px;
     padding:8px 12px; font-weight:700; font-size:14px; cursor:pointer;
   }
-  .quickBtn.on{border-color:var(--pink); background:#FFF0F3; color:var(--pink-d)}
+  .quickBtn.on{border-color:var(--pink); background:var(--hl); color:var(--pink-d)}
 
   .qrWrap{display:flex; flex-direction:column; align-items:center; gap:6px; padding:8px 0}
   .qrWrap canvas{border-radius:14px; box-shadow:var(--sh)}
@@ -223,7 +226,7 @@
   }
   nav#tabs button .ic{font-size:21px; line-height:1.15}
   nav#tabs button .lb{font-size:11px}
-  nav#tabs button.on{color:var(--pink-d); background:#FFF3F5}
+  nav#tabs button.on{color:var(--pink-d); background:var(--hl)}
 
   .toast{
     position:fixed; left:50%; bottom:100px; transform:translateX(-50%); z-index:80;
@@ -236,12 +239,130 @@
   .recipeRow input{width:76px; flex:none; text-align:right}
   .recipeRow span{font-size:12px; width:26px; color:var(--dim)}
   .fold{cursor:pointer; user-select:none}
+
+  /* ---------- 메뉴 번호 · 남은 개수 · 사진 단추 ---------- */
+  .noBadge{
+    position:absolute; left:10px; top:10px; z-index:2;
+    background:var(--ink); color:#fff; font-weight:900; font-size:13px;
+    padding:3px 9px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.2);
+  }
+  .menuBtn .noBadge{position:static; align-self:flex-start; margin-bottom:4px}
+  .menuBtn .thumb + .mName{margin-top:0}
+  .boardCard .bLeft{font-size:13px; font-weight:700; color:#3E9E77; margin-top:2px}
+  .boardCard .phRow{display:flex; flex-wrap:wrap; gap:2px; margin-top:6px}
+  .boardCard .phRow .miniBtn{padding:5px 8px; font-size:12.5px}
+  .qtyInfo{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px}
+  .qtyInfo div{background:var(--soft); border-radius:14px; padding:8px; text-align:center}
+  .qtyInfo small{display:block; color:var(--dim); font-weight:700}
+  .qtyInfo strong{font-size:20px}
+
+  /* ---------- 부스 고르기 ---------- */
+  .boothRow{display:flex; align-items:center; gap:6px; margin-bottom:6px}
+  .boothPick{
+    flex:1; text-align:left; border:2px solid var(--line); background:var(--field); border-radius:14px;
+    padding:11px 12px; font-weight:700; cursor:pointer;
+  }
+  .boothRow.on .boothPick{border-color:var(--pink); background:var(--hl); color:var(--pink-d)}
+
+  /* ---------- 손님 화면 ---------- */
+  body.guest header, body.guest nav#tabs{display:none}
+  body.guest{padding-bottom:20px}
+  .gHead{display:flex; align-items:center; gap:10px; margin:4px 0 2px}
+  .gHead h2{flex:1; margin:0; font-size:26px; font-weight:900; letter-spacing:-.03em; text-align:center}
+  .lockBtn{
+    width:40px; height:40px; border-radius:50%; border:none; background:var(--card);
+    box-shadow:var(--sh); font-size:16px; cursor:pointer; opacity:.55; flex:none;
+  }
+  .gHead::before{content:''; width:40px; flex:none}
+  .gHint{text-align:center; color:var(--dim); font-size:14px; margin:4px 0 14px}
+  .boardCard.tap{cursor:pointer; transition:transform .08s}
+  .boardCard.tap:active{transform:scale(.96)}
+  .boardCard .bd .bp{font-size:22px}
+  .boardCard.noPh .bd{padding-top:44px}
+  body.guest .boardCard .bn{font-size:19px}
+  .inCart{
+    position:absolute; right:10px; top:10px; z-index:3; min-width:34px; height:34px;
+    border-radius:999px; background:var(--pink-d); color:#fff; font-weight:900; font-size:18px;
+    display:flex; align-items:center; justify-content:center; padding:0 8px;
+    box-shadow:0 3px 10px rgba(247,107,132,.45);
+  }
+  .gCart{
+    position:sticky; bottom:0; z-index:10; margin-top:14px;
+    background:var(--card); border-radius:var(--r) var(--r) 0 0; padding:14px 16px calc(10px + env(safe-area-inset-bottom));
+    box-shadow:0 -8px 28px rgba(190,150,120,.28);
+  }
+  .orderBtn{font-size:20px; padding:17px; background:var(--pink-d); box-shadow:0 3px 0 #D9506A}
+  .blueBtn{background:var(--blue); box-shadow:0 3px 0 #5C9BDE}
+
+  /* ---------- 주문 알림 ---------- */
+  .orderPop{
+    position:fixed; inset:0; z-index:90; background:rgba(62,55,51,.55);
+    display:flex; align-items:center; justify-content:center; padding:16px;
+    animation:popIn .18s ease-out;
+  }
+  .orderBox{
+    background:var(--card); border-radius:28px; padding:22px 20px 16px; width:100%; max-width:440px;
+    box-shadow:0 20px 60px rgba(0,0,0,.3); border:5px solid var(--yellow); text-align:center;
+  }
+  .oTitle{font-size:30px; font-weight:900; color:var(--pink-d); letter-spacing:-.03em; margin-bottom:10px}
+  .oLine{
+    display:flex; align-items:baseline; gap:10px; justify-content:center;
+    font-size:28px; font-weight:900; padding:6px 0; border-bottom:2px dashed var(--line);
+  }
+  .oLine .oNo{background:var(--ink); color:#fff; border-radius:12px; padding:0 10px; font-size:24px}
+  .oLine .oQty{color:var(--pink-d)}
+  .oSub{font-size:22px; font-weight:800; margin-top:10px}
+  .oChange{font-size:20px; font-weight:900; color:var(--mint); margin-top:6px}
+  .oBtns{display:flex; justify-content:center; gap:6px; margin-top:14px}
+  .oBtns .miniBtn{font-size:15px; padding:10px 16px}
+  @keyframes popIn{from{transform:scale(.9); opacity:0} to{transform:none; opacity:1}}
+
+  /* ---------- 테마 (부스마다 고른다) ---------- */
+  html[data-theme="pocha"]{
+    --bg:#FFF3D6; --card:#FFFFFF; --ink:#3A1F14; --dim:#8F7263; --line:#F3DDB5;
+    --pink:#F0643C; --pink-d:#D9431E; --yellow:#FFC93C; --mint:#2FA36B; --blue:#4F8FD9; --red:#D9431E;
+    --field:#FFFBF0; --soft:#FCEBC8; --hl:#FFE8DF;
+  }
+  html[data-theme="ocean"]{
+    --bg:#EAF6FF; --card:#FFFFFF; --ink:#16324A; --dim:#6F8BA3; --line:#D3E7F7;
+    --pink:#4FA3E8; --pink-d:#1F7FD0; --yellow:#FFD66B; --mint:#2FC2AE; --blue:#5B8DEF; --red:#E8664F;
+    --field:#F7FBFF; --soft:#DDEFFC; --hl:#E1F0FD;
+  }
+  html[data-theme="forest"]{
+    --bg:#F0F7EC; --card:#FFFFFF; --ink:#23361F; --dim:#77906F; --line:#DCEBD3;
+    --pink:#69B85A; --pink-d:#3E8E3A; --yellow:#F2C94C; --mint:#3FA88A; --blue:#5D9FD6; --red:#D9674F;
+    --field:#FAFDF8; --soft:#E3F0DC; --hl:#E6F4E0;
+  }
+  html[data-theme="night"]{
+    --bg:#17142B; --card:#241F3F; --ink:#F3EEFF; --dim:#A59FC4; --line:#3A3360;
+    --pink:#FF5FA2; --pink-d:#FF3D8B; --yellow:#FFD84D; --mint:#2FD6A6; --blue:#5FA8FF; --red:#FF6B6B;
+    --field:#1D1935; --soft:#2E2850; --hl:#3A2450; --veil:rgba(23,20,43,.78);
+    --sh:0 4px 0 rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.35);
+  }
+  html[data-theme="night"] .toast{background:#F3EEFF; color:#17142B}
+  html[data-theme="night"] .noBadge, html[data-theme="night"] .oLine .oNo{background:var(--pink-d)}
+  html[data-theme="mono"]{
+    --bg:#FFFFFF; --card:#FFFFFF; --ink:#000000; --dim:#555555; --line:#CFCFCF;
+    --pink:#111111; --pink-d:#000000; --yellow:#FFD400; --mint:#111111; --blue:#333333; --red:#D40000;
+    --field:#FFFFFF; --soft:#F1F1F1; --hl:#FFF3B0;
+    --sh:0 0 0 2px #000;
+  }
+  html[data-theme="mono"] .bigBtn{box-shadow:none}
+  .themeRow{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .themeBtn{
+    border:3px solid transparent; border-radius:16px; padding:8px 6px 7px; cursor:pointer;
+    font-weight:800; font-size:13px; display:flex; flex-direction:column; align-items:center; gap:5px;
+  }
+  .themeBtn.on{border-color:var(--ink)}
+  .themeBtn .sw{display:flex; gap:3px}
+  .themeBtn .sw i{width:14px; height:14px; border-radius:50%; display:block; box-shadow:0 0 0 1px rgba(0,0,0,.12)}
 </style>
 </head>
 <body>
   <header>
-    <span class="name" id="boothName">부스</span>
+    <button class="name" id="boothName" title="부스 바꾸기">부스</button>
     <span class="sum" id="headSum"></span>
+    <button class="gear" id="toGuest" aria-label="손님 화면" title="손님 화면">👥</button>
     <button class="gear" id="gear" aria-label="설정">⚙️</button>
   </header>
   <main id="screen"></main>

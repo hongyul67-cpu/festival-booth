@@ -88,18 +88,39 @@
       boothName: '', preset: '',
       account: { bank: '', number: '', holder: '', link: '' },  // 학생들에게 받아 나중에 채운다
       items: [], menus: [],
-      plan: {}, purchases: [], sales: [], adjusts: [], counted: {},
+      plan: {}, purchases: [], sales: [], adjusts: [], counted: {}, menuLog: [],
       cash0: 0, ledgerMode: 'simple', soldout: {}
     };
   }
 
+  /* ---- 부스 여러 개: 부스마다 메뉴·사진·재고·판매 기록을 따로 저장한다 ----
+   * 목록은 LIST_KEY 에, 부스 하나의 장부는 keyOf(id) 에 둔다.
+   * 첫 부스(b1)는 예전 저장 자리(KEY)를 그대로 써서, 이미 쓰던 기록이 사라지지 않게 한다. */
+  var LIST_KEY = 'festival_booth_list';
+  var BL = null;   // { cur: 'b1', booths: [{ id, name }] }
+
+  function keyOf(id) { return id === 'b1' ? KEY : KEY + '_' + id; }
+
+  function loadList() {
+    try { BL = JSON.parse(localStorage.getItem(LIST_KEY) || 'null'); } catch (e) { BL = null; }
+    if (!BL || !BL.booths || !BL.booths.length) BL = { cur: 'b1', booths: [{ id: 'b1', name: '' }] };
+    if (!boothInfo(BL.cur)) BL.cur = BL.booths[0].id;
+  }
+  function saveList() { try { localStorage.setItem(LIST_KEY, JSON.stringify(BL)); } catch (e) { } }
+  function boothInfo(id) {
+    for (var i = 0; i < BL.booths.length; i++) if (BL.booths[i].id === id) return BL.booths[i];
+    return null;
+  }
+
   function load() {
+    loadList();
     try {
-      var raw = localStorage.getItem(KEY);
+      var raw = localStorage.getItem(keyOf(BL.cur));
       if (raw) {
         S = Object.assign(blank(), JSON.parse(raw));
         if (!S.account) S.account = { bank: '', number: '', holder: '', link: '' };
         if (!S.soldout) S.soldout = {};
+        if (!S.menuLog) S.menuLog = [];
         return;
       }
     } catch (e) { /* 못 읽으면 새로 시작 */ }
@@ -108,7 +129,9 @@
 
   var saveWarned = false;
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(S)); }
+    var bi = boothInfo(BL.cur);
+    if (bi && bi.name !== S.boothName) { bi.name = S.boothName; saveList(); }
+    try { localStorage.setItem(keyOf(BL.cur), JSON.stringify(S)); }
     catch (e) {
       if (!saveWarned) {
         saveWarned = true;
@@ -173,7 +196,16 @@
     }
     return min === Infinity ? Infinity : Math.max(0, min);
   }
-  function isSoldout(mn) { return !!S.soldout[mn.id] || makeable(mn) <= 0; }
+  // 메뉴별 수량 — 재료 계산과 별개로 "오늘 몇 개 준비했나"를 직접 적어 두는 방식.
+  // 준비(누적) − 팔림 = 남음. 준비를 안 적은 메뉴는 재료 재고로만 판단한다.
+  function hasReady(mn) { return mn.ready !== undefined && mn.ready !== null && mn.ready !== ''; }
+  function left(mn) {
+    var m = makeable(mn);
+    if (!hasReady(mn)) return m;
+    return Math.max(0, Math.min(num(mn.ready) - soldQty(mn.id), m));
+  }
+  function leftText(mn) { var n = left(mn); return n === Infinity ? '' : '남은 ' + n + '개'; }
+  function isSoldout(mn) { return !!S.soldout[mn.id] || left(mn) <= 0; }
 
   function salesTotal(pay) {
     var s = 0;
@@ -241,12 +273,16 @@
   function render() {
     var root = $('#screen');
     root.innerHTML = '';
+    applyTheme();
+    if (!S.menus.length) mode = 'admin';
+    document.body.classList.toggle('guest', mode === 'guest');
+    if (mode === 'guest') { viewGuest(root); return; }
     if (!S.menus.length && view !== 'setup') view = 'setup';
     ({ sell: viewSell, board: viewBoard, stock: viewStock, close: viewClose, setup: viewSetup }[view] || viewSell)(root);
 
     var tabs = document.querySelectorAll('#tabs button');
     for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('on', tabs[i].dataset.v === view);
-    $('#boothName').textContent = S.boothName || '축제 부스';
+    $('#boothName').textContent = (S.boothName || '축제 부스') + ' ▾';
     $('#headSum').textContent = S.sales.length ? (won(salesTotal()) + '원 · ' + S.sales.length + '건') : '';
   }
 
@@ -267,9 +303,10 @@
 
   function viewSell(root) {
     var grid = el('div', 'grid');
-    S.menus.forEach(function (mn) {
-      var can = makeable(mn), out = isSoldout(mn);
+    S.menus.forEach(function (mn, idx) {
+      var can = left(mn), out = isSoldout(mn);
       var b = el('button', 'menuBtn' + (out ? ' out' : (can <= 5 ? ' low' : '')));
+      b.appendChild(el('span', 'noBadge', (idx + 1) + '번'));
       if (mn.photo) {
         var im = document.createElement('img');
         im.className = 'thumb';
@@ -280,7 +317,7 @@
       b.appendChild(el('span', 'mName', mn.name));
       b.appendChild(el('span', 'mPrice', won(mn.price) + '원'));
       b.appendChild(el('span', 'mLeft',
-        out ? '품절' : (can === Infinity ? ' ' : '가능 ' + can + '개')));
+        out ? '품절' : (can === Infinity ? ' ' : '남은 ' + can + '개')));
       b.onclick = function () {
         if (out && !confirm(mn.name + '은(는) 품절 표시 상태입니다. 그래도 팔까요?')) return;
         addCart(mn.id);
@@ -408,16 +445,21 @@
     });
   }
 
-  function finishSale(pay, received, change) {
+  function finishSale(pay, received, change, by) {
     var lines = cart.map(function (l) {
       var mn = menu(l.menuId);
-      return { menuId: l.menuId, name: mn.name, price: mn.price, qty: l.qty };
+      return { menuId: l.menuId, no: menuNo(l.menuId), name: mn.name, price: mn.price, qty: l.qty };
     });
-    S.sales.push({ id: uid(), t: Date.now(), lines: lines, total: cartTotal(), pay: pay, received: received, change: change });
+    var last = S.sales.length ? S.sales[S.sales.length - 1] : null;
+    var sale = {
+      id: uid(), no: (last && last.no ? last.no : S.sales.length) + 1, t: Date.now(),
+      lines: lines, total: cartTotal(), pay: pay, received: received, change: change, by: by || '관리자'
+    };
+    S.sales.push(sale);
     cart = [];
     save();
     render();
-    toast(change > 0 ? '거스름돈 ' + won(change) + '원' : pay + ' 완료');
+    announce(sale);
   }
 
   /* ================= 송금 QR ================= */
@@ -523,7 +565,8 @@
   }
 
   function boardCard(mn, editable) {
-    var card = el('div', 'boardCard');
+    var card = el('div', 'boardCard' + (!mn.photo && !editable ? ' noPh' : ''));
+    card.appendChild(el('span', 'noBadge', menuNo(mn.id) + '번'));
     if (mn.photo) {
       var im = document.createElement('img');
       im.className = 'ph';
@@ -555,9 +598,27 @@
         save(); render();
       };
       bd.appendChild(pz);
+      var cnt = el('div', 'bLeft', (leftText(mn) || '수량 제한 없음') + ' · 팔림 ' + soldQty(mn.id) + '개');
+      bd.appendChild(cnt);
+      // 사진은 메뉴마다 따로 넣고 뺀다
+      var pr = el('div', 'phRow');
+      var pBtn = el('button', 'miniBtn', mn.photo ? '📷 사진 바꾸기' : '📷 사진 넣기');
+      pBtn.onclick = function () { pickPhoto(mn); };
+      pr.appendChild(pBtn);
+      if (mn.photo) {
+        var pDel = el('button', 'miniBtn warn', '빼기');
+        pDel.onclick = function () { if (!confirm(mn.name + ' 사진을 뺄까요?')) return; mn.photo = ''; save(); render(); };
+        pr.appendChild(pDel);
+      }
+      var qBtn = el('button', 'miniBtn go', '🔢 수량');
+      qBtn.onclick = function () { askReady(mn); };
+      pr.appendChild(qBtn);
+      bd.appendChild(pr);
     } else {
       bd.appendChild(el('div', 'bn', mn.name));
       bd.appendChild(el('div', 'bp', won(mn.price) + '원'));
+      var lt = leftText(mn);
+      if (lt && !isSoldout(mn)) bd.appendChild(el('div', 'bLeft', lt));
     }
     card.appendChild(bd);
 
@@ -569,16 +630,17 @@
     var c = el('div', 'card');
     var head = el('div', 'rowBetween');
     head.appendChild(el('h3', null, '메뉴판'));
-    var showBtn = el('button', 'miniBtn go', '🖥 손님에게 보여주기');
-    showBtn.onclick = showBoard;
+    var showBtn = el('button', 'miniBtn go', '👥 손님 화면으로');
+    showBtn.onclick = enterGuest;
     head.appendChild(showBtn);
     c.appendChild(head);
-    c.appendChild(el('p', 'muted', '사진을 누르면 바꿀 수 있고, 가격을 누르면 그 자리에서 고칠 수 있습니다. 오늘 아침에 정해도 됩니다.'));
+    c.appendChild(el('p', 'muted', '메뉴마다 [📷 사진 넣기]로 사진을 따로 넣고, 가격을 누르면 그 자리에서 고칠 수 있습니다. [🔢 수량]으로 준비한 개수를 적으면 손님 메뉴판에 남은 개수가 보입니다.'));
     root.appendChild(c);
 
     var grid = el('div', 'boardGrid');
     S.menus.forEach(function (mn) { grid.appendChild(boardCard(mn, true)); });
     root.appendChild(grid);
+    root.appendChild(themeCard());
 
     var c2 = el('div', 'card');
     c2.appendChild(el('h3', null, '품절 표시'));
@@ -600,28 +662,262 @@
     root.appendChild(c2);
   }
 
-  function showBoard() {
-    var ov = el('div', 'show');
-    var x = el('button', 'closeX', '✕');
-    x.onclick = function () { document.body.removeChild(ov); };
-    ov.appendChild(x);
-    ov.appendChild(el('h2', null, S.boothName || '메뉴'));
+  /* ================= 손님 화면 / 관리자 잠금 ================= */
+  // 손님 화면: 메뉴를 눌러 담고 [주문하기]만 할 수 있다. 가격·수량·기록은 못 건드린다.
+  // 관리자 화면(판매·메뉴판 편집·재고·마감·설정)은 비밀번호를 넣어야 들어간다.
+  var MODE_KEY = 'festival_booth_mode', PW_KEY = 'festival_booth_pw';
+  var mode = 'admin';
+  try { mode = localStorage.getItem(MODE_KEY) === 'guest' ? 'guest' : 'admin'; } catch (e) { }
+  function adminPw() { try { return localStorage.getItem(PW_KEY) || '1234'; } catch (e) { return '1234'; } }  // 임시 비밀번호 1234
+
+  function setMode(m) {
+    mode = m;
+    try { localStorage.setItem(MODE_KEY, m); } catch (e) { }
+    cart = [];
+    render();
+    window.scrollTo(0, 0);
+  }
+  function enterGuest() {
+    if (!S.menus.length) { alert('메뉴부터 만들어 주세요.'); return; }
+    setMode('guest');
+  }
+  function askAdmin() {
+    modal(function (box, close) {
+      box.appendChild(el('h3', null, '🔒 관리자'));
+      var inp = el('input', 'bigInput');
+      inp.type = 'password'; inp.inputMode = 'numeric'; inp.placeholder = '비밀번호';
+      box.appendChild(inp);
+      var ok = el('button', 'bigBtn', '들어가기');
+      function tryIt() {
+        if (inp.value === adminPw()) { close(); setMode('admin'); toast('관리자 화면입니다'); }
+        else { inp.value = ''; inp.focus(); toast('비밀번호가 틀렸습니다'); }
+      }
+      ok.onclick = tryIt;
+      inp.onkeydown = function (e) { if (e.key === 'Enter') tryIt(); };
+      box.appendChild(ok);
+      var no = el('button', 'linkBtn', '닫기');
+      no.onclick = close;
+      box.appendChild(no);
+      setTimeout(function () { inp.focus(); }, 60);
+    });
+  }
+
+  function viewGuest(root) {
+    var top = el('div', 'gHead');
+    top.appendChild(el('h2', null, S.boothName || '메뉴'));
+    var lock = el('button', 'lockBtn', '🔒');
+    lock.setAttribute('aria-label', '관리자');
+    lock.onclick = askAdmin;
+    top.appendChild(lock);
+    root.appendChild(top);
+    root.appendChild(el('p', 'gHint', '먹고 싶은 메뉴를 누르고 [주문하기]를 눌러 주세요.'));
+
     var grid = el('div', 'boardGrid');
-    S.menus.forEach(function (mn) { grid.appendChild(boardCard(mn, false)); });
-    ov.appendChild(grid);
-    if (payString(1)) {
+    S.menus.forEach(function (mn) {
+      var c = boardCard(mn, false);
+      var out = isSoldout(mn);
+      c.classList.add('tap');
+      var inCart = 0;
+      cart.forEach(function (l) { if (l.menuId === mn.id) inCart = l.qty; });
+      if (inCart) c.appendChild(el('span', 'inCart', inCart));
+      c.onclick = function () {
+        if (out) { toast('품절입니다'); return; }
+        if (inCart + 1 > left(mn)) { toast('남은 수량이 ' + left(mn) + '개입니다'); return; }
+        addCart(mn.id);
+      };
+      grid.appendChild(c);
+    });
+    root.appendChild(grid);
+
+    if (cart.length) {
+      var bar = el('div', 'gCart');
+      cart.forEach(function (line, idx) {
+        var mn = menu(line.menuId);
+        var row = el('div', 'cartRow');
+        row.appendChild(el('span', 'cName', menuNo(mn.id) + '번 ' + mn.name));
+        var minus = el('button', 'qtyBtn', '−');
+        minus.onclick = function () { cart[idx].qty--; if (cart[idx].qty <= 0) cart.splice(idx, 1); render(); };
+        var plus = el('button', 'qtyBtn', '+');
+        plus.onclick = function () {
+          if (cart[idx].qty + 1 > left(mn)) { toast('남은 수량이 ' + left(mn) + '개입니다'); return; }
+          cart[idx].qty++; render();
+        };
+        row.appendChild(minus);
+        row.appendChild(el('span', 'cQty', String(line.qty)));
+        row.appendChild(plus);
+        row.appendChild(el('span', 'cSum', won(mn.price * line.qty)));
+        bar.appendChild(row);
+      });
+      var tot = el('div', 'total');
+      tot.appendChild(el('span', null, '합계'));
+      tot.appendChild(el('strong', null, won(cartTotal()) + '원'));
+      bar.appendChild(tot);
+      var go2 = el('button', 'bigBtn orderBtn', '🔔 주문하기');
+      go2.onclick = guestPay;
+      bar.appendChild(go2);
+      var clr = el('button', 'linkBtn', '다시 고르기');
+      clr.onclick = function () { cart = []; render(); };
+      bar.appendChild(clr);
+      root.appendChild(bar);
+    } else if (payString(1)) {
       var qc = el('div', 'card');
       qc.appendChild(el('h3', null, '계좌이체도 됩니다'));
       var w = el('div', 'qrWrap');
       qc.appendChild(w);
       drawQR(w, null, '');   // 메뉴판에는 금액 없이 계좌만
-      ov.appendChild(qc);
+      root.appendChild(qc);
     }
-    document.body.appendChild(ov);
+  }
+
+  // 손님이 [주문하기]를 누르면 계산 방법만 고르게 한다. 돈은 부스 사람이 받는다.
+  function guestPay() {
+    var total = cartTotal();
+    if (total <= 0) return;
+    modal(function (box, close) {
+      box.appendChild(el('h3', null, '합계 ' + won(total) + '원'));
+      box.appendChild(el('p', 'muted', '어떻게 계산하시겠어요?'));
+      var cash = el('button', 'bigBtn', '💵 현금으로 낼게요');
+      cash.onclick = function () { close(); finishSale('현금', total, 0, '손님'); };
+      box.appendChild(cash);
+      if (payString(1)) {
+        var tr = el('button', 'bigBtn blueBtn', '📱 계좌이체');
+        tr.onclick = function () {
+          box.innerHTML = '';
+          box.appendChild(el('h3', null, '이체 ' + won(total) + '원'));
+          var wrap = el('div', 'qrWrap');
+          box.appendChild(wrap);
+          drawQR(wrap, total);
+          var ok = el('button', 'bigBtn', '보냈어요 · 주문하기');
+          ok.onclick = function () { close(); finishSale('이체', total, 0, '손님'); };
+          box.appendChild(ok);
+          var no2 = el('button', 'linkBtn', '취소');
+          no2.onclick = close;
+          box.appendChild(no2);
+        };
+        box.appendChild(tr);
+      }
+      var no = el('button', 'linkBtn', '취소');
+      no.onclick = close;
+      box.appendChild(no);
+    });
+  }
+
+  /* ================= 메뉴별 수량 (준비·팔림·남음) ================= */
+  function logMenu(mn, kind, qty, note) {
+    S.menuLog.push({ id: uid(), t: Date.now(), menuId: mn.id, name: mn.name, kind: kind, qty: qty, note: note || '' });
+  }
+
+  function askReady(mn) {
+    modal(function (box, close) {
+      var sold = soldQty(mn.id);
+      box.appendChild(el('h3', null, menuNo(mn.id) + '번 ' + mn.name + ' 수량'));
+      var info = el('div', 'qtyInfo');
+      [['준비', hasReady(mn) ? num(mn.ready) + '개' : '안 적음'], ['팔림', sold + '개'],
+       ['남음', hasReady(mn) ? Math.max(0, num(mn.ready) - sold) + '개' : '—']].forEach(function (p) {
+        var d = el('div');
+        d.appendChild(el('small', null, p[0]));
+        d.appendChild(el('strong', null, p[1]));
+        info.appendChild(d);
+      });
+      box.appendChild(info);
+
+      box.appendChild(el('p', 'muted', hasReady(mn) ? '더 만들었으면 추가한 개수를 적으세요.' : '오늘 처음 준비한 개수를 적으세요.'));
+      var add = el('input', 'bigInput');
+      add.type = 'number'; add.inputMode = 'numeric'; add.placeholder = hasReady(mn) ? '추가 개수' : '준비 개수';
+      box.appendChild(add);
+      var ok = el('button', 'bigBtn', hasReady(mn) ? '+ 추가하기' : '준비 수량 저장');
+      ok.onclick = function () {
+        var v = Math.round(num(add.value));
+        if (v <= 0) { alert('1 이상의 개수를 적어 주세요.'); return; }
+        var first = !hasReady(mn);
+        mn.ready = (first ? 0 : num(mn.ready)) + v;
+        logMenu(mn, first ? '처음 준비' : '추가 준비', v);
+        save(); close(); render(); toast(mn.name + ' ' + v + '개 ' + (first ? '준비' : '추가'));
+      };
+      box.appendChild(ok);
+
+      if (hasReady(mn)) {
+        box.appendChild(el('p', 'muted', '실제로 세어 보니 남은 개수가 다르면 여기서 고치세요. (폐기·서비스 등)'));
+        var fix = el('input');
+        fix.type = 'number'; fix.inputMode = 'numeric'; fix.placeholder = '실제 남은 개수';
+        box.appendChild(fix);
+        var fb = el('button', 'miniBtn', '남은 개수 고치기');
+        fb.onclick = function () {
+          if (fix.value === '') { alert('남은 개수를 적어 주세요.'); return; }
+          var want = Math.max(0, Math.round(num(fix.value)));
+          var before = Math.max(0, num(mn.ready) - sold);
+          mn.ready = sold + want;
+          logMenu(mn, '남은 개수 수정', want - before, before + '개 → ' + want + '개');
+          save(); close(); render(); toast('남은 개수를 ' + want + '개로 고쳤습니다');
+        };
+        box.appendChild(fb);
+        var rm = el('button', 'linkBtn', '수량 관리 끄기 (제한 없이 팔기)');
+        rm.onclick = function () {
+          if (!confirm('이 메뉴의 준비 수량을 지웁니다. 판매 기록은 그대로 남습니다.')) return;
+          delete mn.ready;
+          logMenu(mn, '수량 관리 끔', 0);
+          save(); close(); render();
+        };
+        box.appendChild(rm);
+      }
+      var no = el('button', 'linkBtn', '닫기');
+      no.onclick = close;
+      box.appendChild(no);
+      setTimeout(function () { add.focus(); }, 60);
+    });
+  }
+
+  function menuQtyCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h3', null, '🔢 메뉴별 수량'));
+    c.appendChild(el('p', 'muted', '준비한 개수를 적어 두면 팔 때마다 남은 개수가 줄고, 손님 메뉴판에도 보입니다. [수정]으로 언제든 추가하거나 고칠 수 있습니다.'));
+    var t = el('table', 'tbl');
+    var h = el('tr');
+    ['메뉴', '준비', '팔림', '남음', ''].forEach(function (x, i) { h.appendChild(el('th', i && i < 4 ? 'r' : null, x)); });
+    t.appendChild(h);
+    S.menus.forEach(function (mn) {
+      var tr = el('tr');
+      var sold = soldQty(mn.id);
+      var lf = left(mn);
+      if (lf <= 0) tr.className = 'zero';
+      tr.appendChild(el('td', null, menuNo(mn.id) + '번 ' + mn.name));
+      tr.appendChild(el('td', 'r', hasReady(mn) ? String(num(mn.ready)) : '—'));
+      tr.appendChild(el('td', 'r', String(sold)));
+      tr.appendChild(el('td', 'r big', lf === Infinity ? '—' : String(lf)));
+      var td = el('td', 'r');
+      var b = el('button', 'miniBtn go', '수정');
+      b.onclick = function () { askReady(mn); };
+      td.appendChild(b);
+      tr.appendChild(td);
+      t.appendChild(tr);
+    });
+    c.appendChild(t);
+
+    if (S.menuLog.length) {
+      var f = el('p', 'muted fold', '▸ 수량 기록 ' + S.menuLog.length + '건 보기');
+      var list = el('div');
+      list.style.display = 'none';
+      f.onclick = function () {
+        var open = list.style.display === 'none';
+        list.style.display = open ? '' : 'none';
+        f.textContent = (open ? '▾' : '▸') + ' 수량 기록 ' + S.menuLog.length + '건 ' + (open ? '접기' : '보기');
+      };
+      S.menuLog.slice().reverse().forEach(function (g) {
+        var d = new Date(g.t);
+        var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+        list.appendChild(el('div', 'muted', hm + ' · ' + g.name + ' · ' + g.kind +
+          (g.qty ? ' ' + (g.qty > 0 ? '+' : '') + g.qty + '개' : '') + (g.note ? ' (' + g.note + ')' : '')));
+      });
+      c.appendChild(f);
+      c.appendChild(list);
+    }
+    return c;
   }
 
   /* ================= 재고 (장보기 포함) ================= */
   function viewStock(root) {
+    root.appendChild(menuQtyCard());
+
     // 장보기 계산기
     var c0 = el('div', 'card');
     var h0 = el('div', 'rowBetween fold');
@@ -1014,14 +1310,243 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   }
 
+  /* ================= 테마 ================= */
+  // [키, 이름, 바탕, 카드, 글자, 강조, 보조] — 색 견본은 고르는 단추에만 쓰고, 실제 색은 index.html 의 CSS 가 정한다
+  var THEMES = [
+    ['pastel', '🍓 파스텔', '#FFF6EE', '#FFFFFF', '#3E3733', '#F76B84', '#FFCF5C'],
+    ['pocha', '🏮 포장마차', '#FFF3D6', '#FFFFFF', '#3A1F14', '#D9431E', '#FFC93C'],
+    ['ocean', '🌊 바다', '#EAF6FF', '#FFFFFF', '#16324A', '#1F7FD0', '#2FC2AE'],
+    ['forest', '🌿 숲', '#F0F7EC', '#FFFFFF', '#23361F', '#3E8E3A', '#F2C94C'],
+    ['night', '🌙 밤 축제', '#17142B', '#241F3F', '#F3EEFF', '#FF3D8B', '#FFD84D'],
+    ['mono', '⬛ 흑백 크게', '#FFFFFF', '#FFFFFF', '#000000', '#000000', '#FFD400']
+  ];
+  function applyTheme() {
+    var t = S.theme || 'pastel';
+    document.documentElement.setAttribute('data-theme', t);
+    var m = document.querySelector('meta[name=theme-color]');
+    for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === t && m) m.setAttribute('content', THEMES[i][2]);
+  }
+  function themeCard() {
+    var c = el('div', 'card');
+    c.appendChild(el('h3', null, '🎨 디자인 테마'));
+    c.appendChild(el('p', 'muted', '부스마다 따로 고를 수 있습니다. 손님 화면에도 같은 테마가 쓰입니다.'));
+    var row = el('div', 'themeRow');
+    THEMES.forEach(function (t) {
+      var b = el('button', 'themeBtn' + ((S.theme || 'pastel') === t[0] ? ' on' : ''));
+      b.style.background = t[2];
+      b.style.color = t[4];
+      b.style.boxShadow = '0 0 0 1px ' + (t[0] === 'night' ? '#3A3360' : 'rgba(0,0,0,.1)');
+      var sw = el('span', 'sw');
+      [t[3], t[5], t[6]].forEach(function (col) { var i = el('i'); i.style.background = col; sw.appendChild(i); });
+      b.appendChild(sw);
+      b.appendChild(el('span', null, t[1]));
+      b.onclick = function () { S.theme = t[0]; save(); render(); toast(t[1] + ' 테마'); };
+      row.appendChild(b);
+    });
+    c.appendChild(row);
+    return c;
+  }
+
+  /* ================= 부스 고르기 ================= */
+  function switchBooth(id) {
+    save();
+    BL.cur = id;
+    saveList();
+    cart = [];
+    load();
+    view = S.menus.length ? 'board' : 'setup';
+    render();
+  }
+
+  function boothPicker() {
+    modal(function (box, close) {
+      box.appendChild(el('h3', null, '부스 고르기'));
+      box.appendChild(el('p', 'muted', '부스마다 메뉴판·사진·재고·판매 기록이 따로 저장됩니다.'));
+      BL.booths.forEach(function (b, i) {
+        var row = el('div', 'boothRow' + (b.id === BL.cur ? ' on' : ''));
+        var pick = el('button', 'boothPick', (b.name || '이름 없는 부스 ' + (i + 1)) + (b.id === BL.cur ? '  ✓ 지금' : ''));
+        pick.onclick = function () { close(); if (b.id !== BL.cur) { switchBooth(b.id); toast((b.name || '부스') + '(으)로 바꿨습니다'); } };
+        row.appendChild(pick);
+        if (BL.booths.length > 1) {
+          var del = el('button', 'miniBtn warn', '지우기');
+          del.onclick = function () {
+            if (!confirm((b.name || '이 부스') + ' 의 메뉴·사진·판매 기록을 모두 지웁니다.\n되돌릴 수 없습니다. 지울까요?')) return;
+            try { localStorage.removeItem(keyOf(b.id)); } catch (e) { }
+            BL.booths.splice(i, 1);
+            close();
+            if (b.id === BL.cur) { BL.cur = BL.booths[0].id; saveList(); load(); view = S.menus.length ? 'board' : 'setup'; render(); }
+            else saveList();
+            toast('지웠습니다');
+          };
+          row.appendChild(del);
+        }
+        box.appendChild(row);
+      });
+      var nm = el('input');
+      nm.placeholder = '새 부스 이름 (예: 2학년 3반 빙수)';
+      nm.style.marginTop = '12px';
+      box.appendChild(nm);
+      var add = el('button', 'bigBtn', '+ 새 부스 만들기');
+      add.onclick = function () {
+        var name = nm.value.trim();
+        if (!name) { alert('부스 이름을 적어 주세요.'); nm.focus(); return; }
+        save();
+        var id = 'b' + uid();
+        BL.booths.push({ id: id, name: name });
+        BL.cur = id;
+        saveList();
+        S = blank();
+        S.boothName = name;
+        cart = [];
+        save();
+        close();
+        view = 'setup';
+        render();
+        toast('새 부스를 만들었습니다. 메뉴 꾸러미를 고르거나 메뉴를 넣으세요.');
+      };
+      box.appendChild(add);
+      var no = el('button', 'linkBtn', '닫기');
+      no.onclick = close;
+      box.appendChild(no);
+    });
+  }
+
+  /* ================= 주문 알림 (큰 글씨 + 소리) ================= */
+  var soundOn = true;
+  try { soundOn = localStorage.getItem('festival_booth_sound') !== 'off'; } catch (e) { }
+
+  function menuNo(id) {
+    for (var i = 0; i < S.menus.length; i++) if (S.menus[i].id === id) return i + 1;
+    return 0;
+  }
+
+  // 띵동 — 떠들썩한 부스에서도 들리게 음성 앞에 짧은 종소리를 낸다
+  var actx = null;
+  function chime() {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === 'suspended') actx.resume();
+      [[880, 0], [660, 0.28]].forEach(function (n) {
+        var o = actx.createOscillator(), g = actx.createGain();
+        var t = actx.currentTime + n[1];
+        o.type = 'triangle';
+        o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.9, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+        o.connect(g); g.connect(actx.destination);
+        o.start(t); o.stop(t + 0.55);
+      });
+    } catch (e) { }
+  }
+
+  function speak(text) {
+    if (!('speechSynthesis' in window)) return;
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ko-KR'; u.rate = 0.95; u.pitch = 1; u.volume = 1;
+      var vs = speechSynthesis.getVoices();
+      for (var i = 0; i < vs.length; i++) if (/^ko/i.test(vs[i].lang)) { u.voice = vs[i]; break; }
+      speechSynthesis.speak(u);
+    } catch (e) { }
+  }
+
+  function orderSpeech(sale) {
+    var parts = sale.lines.map(function (l) { return l.no + '번 ' + l.name + ' ' + l.qty + '개'; });
+    return '주문 ' + sale.no + '번. ' + parts.join(', ') + ' 주문되었습니다.';
+  }
+
+  function announce(sale) {
+    var text = orderSpeech(sale);
+    if (soundOn) { chime(); setTimeout(function () { speak(text); }, 700); }
+
+    var ov = el('div', 'orderPop');
+    var inner = el('div', 'orderBox');
+    inner.appendChild(el('div', 'oTitle', '🔔 주문 ' + sale.no + '번'));
+    sale.lines.forEach(function (l) {
+      var r = el('div', 'oLine');
+      r.appendChild(el('span', 'oNo', l.no + '번'));
+      r.appendChild(el('span', 'oName', l.name));
+      r.appendChild(el('span', 'oQty', l.qty + '개'));
+      inner.appendChild(r);
+    });
+    inner.appendChild(el('div', 'oSub', '주문되었습니다'));
+    if (sale.change > 0) inner.appendChild(el('div', 'oChange', '거스름돈 ' + won(sale.change) + '원'));
+    var btns = el('div', 'oBtns');
+    var again = el('button', 'miniBtn', '🔊 다시 듣기');
+    again.onclick = function (e) { e.stopPropagation(); chime(); setTimeout(function () { speak(text); }, 700); };
+    btns.appendChild(again);
+    var ok = el('button', 'miniBtn go', '확인');
+    btns.appendChild(ok);
+    inner.appendChild(btns);
+    ov.appendChild(inner);
+    function shut() { clearTimeout(timer); if (ov.parentNode) ov.parentNode.removeChild(ov); }
+    ov.onclick = shut;
+    ok.onclick = shut;
+    document.body.appendChild(ov);
+    var timer = setTimeout(shut, 8000);
+  }
+
   /* ================= 설정 ================= */
   function viewSetup(root) {
+    var cb = el('div', 'card');
+    var hb = el('div', 'rowBetween');
+    hb.appendChild(el('h3', null, '🏪 지금 부스: ' + (S.boothName || '이름 없음')));
+    var pb = el('button', 'miniBtn go', '부스 바꾸기 · 추가');
+    pb.onclick = boothPicker;
+    hb.appendChild(pb);
+    cb.appendChild(hb);
+    cb.appendChild(el('p', 'muted', '이 기기에 만든 부스 ' + BL.booths.length + '개. 부스마다 메뉴판·사진·기록이 따로입니다.'));
+    root.appendChild(cb);
+    root.appendChild(themeCard());
+
+    var cs = el('div', 'card');
+    var hs = el('div', 'rowBetween');
+    hs.appendChild(el('h3', null, '🔊 주문 알림 소리'));
+    var tgS = el('button', 'miniBtn' + (soundOn ? ' go' : ' warn'), soundOn ? '켜짐' : '꺼짐');
+    tgS.onclick = function () {
+      soundOn = !soundOn;
+      try { localStorage.setItem('festival_booth_sound', soundOn ? 'on' : 'off'); } catch (e) { }
+      render();
+    };
+    hs.appendChild(tgS);
+    cs.appendChild(hs);
+    cs.appendChild(el('p', 'muted', '결제를 마치면 "주문 1번. 1번 세트 2개 주문되었습니다"처럼 소리로 읽어 줍니다. 폰 미디어 소리를 크게 올려 두세요. 무음 모드면 안 들립니다.'));
+    var tst = el('button', 'miniBtn', '▶ 소리 시험');
+    tst.onclick = function () {
+      var m = S.menus[0];
+      var t = '주문 1번. 1번 ' + (m ? m.name : '메뉴') + ' 2개 주문되었습니다.';
+      chime(); setTimeout(function () { speak(t); }, 700);
+    };
+    cs.appendChild(tst);
+    root.appendChild(cs);
+
+    var cp = el('div', 'card');
+    cp.appendChild(el('h3', null, '🔒 관리자 비밀번호'));
+    cp.appendChild(el('p', 'muted', '손님 화면에서 관리자 화면으로 돌아올 때 씁니다. 처음 비밀번호는 1234 입니다. 이 기기의 모든 부스에 같이 적용됩니다.'));
+    var pwR = el('div', 'formRow');
+    pwR.appendChild(el('label', null, '새 비밀번호'));
+    var pwI = el('input');
+    pwI.type = 'text'; pwI.inputMode = 'numeric'; pwI.placeholder = '숫자 4자리 이상';
+    pwR.appendChild(pwI);
+    cp.appendChild(pwR);
+    var pwB = el('button', 'miniBtn', '비밀번호 바꾸기');
+    pwB.onclick = function () {
+      if (pwI.value.length < 4) { alert('4자리 이상으로 적어 주세요.'); return; }
+      try { localStorage.setItem(PW_KEY, pwI.value); } catch (e) { }
+      pwI.value = '';
+      toast('비밀번호를 바꿨습니다');
+    };
+    cp.appendChild(pwB);
+    root.appendChild(cp);
+
     var c0 = el('div', 'card');
     c0.appendChild(el('h3', null, '부스 이름'));
     var n0 = el('input');
     n0.value = S.boothName || '';
     n0.placeholder = '예: 3학년 1반 비빔면';
-    n0.oninput = function () { S.boothName = n0.value; save(); $('#boothName').textContent = S.boothName || '축제 부스'; };
+    n0.oninput = function () { S.boothName = n0.value; save(); $('#boothName').textContent = (S.boothName || '축제 부스') + ' ▾'; };
     c0.appendChild(n0);
     c0.appendChild(el('p', 'muted', '메뉴 꾸러미 불러오기'));
     var pr = el('div', 'quickRow');
@@ -1162,7 +1687,7 @@
     var cl = el('button', 'miniBtn warn', '오늘 기록 지우기');
     cl.onclick = function () {
       if (!confirm('판매·입고·폐기 기록을 지웁니다.\n메뉴와 재료 설정은 그대로 남습니다.')) return;
-      S.sales = []; S.purchases = []; S.adjusts = []; S.counted = {};
+      S.sales = []; S.purchases = []; S.adjusts = []; S.counted = {}; S.menuLog = [];
       save(); render(); toast('기록을 비웠습니다');
     };
     c4.appendChild(cl);
@@ -1183,6 +1708,10 @@
         bar.appendChild(b);
       });
     document.getElementById('gear').onclick = function () { go('setup'); };
+    document.getElementById('boothName').onclick = boothPicker;
+    document.getElementById('toGuest').onclick = enterGuest;
+    // 폰 브라우저는 목소리 목록을 늦게 준다 — 미리 한 번 불러 둔다
+    if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) { } }
     if (!S.menus.length) view = 'setup';
     render();
   }
